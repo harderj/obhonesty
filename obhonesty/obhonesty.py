@@ -7,35 +7,57 @@ import uuid
 import reflex as rx
 import gspread
 
+from obhonesty.aux import two_decimal_points
 
-gclient = gspread.service_account(filename="service_account.json")
+
+gclient = gspread.service_account()
 spreadsheet = gclient.open("test")
 user_sheet = spreadsheet.worksheet("users")
 item_sheet = spreadsheet.worksheet("items")
 order_sheet = spreadsheet.worksheet("orders")
 
 
-
 class User(rx.Base):
   name: str
   password: str
+  email: str
+  telephone: str
+  address: str
 
   def __str__(self):
     return f"User(name={self.name}, password={self.password})"
 
   @staticmethod
   def from_dict(x: Dict[str, str]):
-    return User(name=x['name'], password=x['password'])
+    return User(
+      name=x['name'],
+      password=x['password'],
+      email=x['email'],
+      telephone=x['telephone'],
+      address=x['address']
+    )
 
 
 class Item(rx.Base):
   name: str
   price: float
   image_url: str
+  description: str
+  deadline: Optional[datetime]
+
 
   @staticmethod
   def from_dict(x: Dict[str, str]):
-    return Item(name=x['name'], price=x['price'], image_url=x['image_url'])
+    deadline_str: str = x['deadline']
+    deadline = None if deadline_str=="" \
+      else datetime.strptime(deadline_str, '%H:%M')
+    return Item(
+      name=x['name'],
+      price=x['price'],
+      image_url=x['image_url'],
+      description=x['description'],
+      deadline=deadline
+    )
 
 
 class State(rx.State):
@@ -91,19 +113,32 @@ def index() -> rx.Component:
 
 def user_page() -> rx.Component:
   item_button: Callable[[Item], rx.Component] = lambda item: \
-    rx.button(
-      item.name,
-      rx.image(
-        src=item.image_url,
-        width="80px",
+    rx.dialog.root(
+      rx.dialog.trigger(rx.button(
+        rx.image(
+          src=item.image_url,
+          width="80px",
+          height="auto",
+          border_radius="15px",
+          margin="10px"
+        ),
+        rx.text(item.name, size="5"),
+        width="auto",
         height="auto",
-        border_radius="15px",
-        margin="10px"
-      ),
-      width="auto",
-      height="auto",
-      on_click=State.order_item(item),
-      color_scheme='gray'
+        color_scheme='gray'
+      )),
+      rx.dialog.content(
+        rx.dialog.title(f"{item.name} (€{two_decimal_points(item.price)})"),
+        rx.dialog.description(item.description),
+        rx.flex(
+          rx.dialog.close(
+            rx.button("Order", on_click=State.order_item(item))
+          ),
+          rx.dialog.close(rx.button(f"Cancel")),
+          spacing="3",
+          justify="end"
+        )
+      )
     )
   return rx.container(
     rx.vstack(
@@ -115,7 +150,31 @@ def user_page() -> rx.Component:
   )
 
 
-app = rx.App()
-app.add_page(index, route="/", on_load=State.initialize, title="Welcome")
-app.add_page(user_page, route="/user", on_load=State.redirect_no_user)
+def admin() -> rx.Component:
+  orders = order_sheet.get_all_records()
+  n_o_dinner_signups = len([
+    order for order in orders if order['item'] == "Sign-up for dinner" \
+    and datetime.fromisoformat(order['time']).date() == datetime.today().date()
+  ])
+  users = user_sheet.get_all_records()
+  n_o_volunteers = len([
+    user for user in users if user['volunteer'] == "yes" \
+    and user['away'] != "yes"
+  ])
+  return rx.container(
+    rx.vstack(
+      rx.heading(f"Admin"),
+      rx.button("Return to index", on_click=rx.redirect("/")),
+      rx.text(f"Signed up for dinner: {n_o_dinner_signups}"),
+      rx.text(f"Volunteers: {n_o_volunteers}"),
+      rx.text(f"Total eating dinner: {n_o_dinner_signups + n_o_volunteers}")
+    )
+  ) 
 
+
+default_page_title: str = "OB Honesty system"
+
+app = rx.App()
+app.add_page(index, route="/", on_load=State.initialize)
+app.add_page(user_page, route="/user", on_load=State.redirect_no_user)
+app.add_page(admin, route="/admin")
