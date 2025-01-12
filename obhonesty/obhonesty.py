@@ -1,6 +1,6 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Callable, List, Optional
 import uuid
 
@@ -29,6 +29,7 @@ class State(rx.State):
 
   @rx.event
   def initialize(self): # -> List[Dict[str, str]]:
+    print("State.initize() called")
     user_data = user_sheet.get_all_records() 
     item_data = item_sheet.get_all_records()
     self.users = [User.from_dict(x) for x in user_data]
@@ -75,34 +76,42 @@ def index() -> rx.Component:
 
 
 def user_page() -> rx.Component:
+  now = datetime.now()
   item_button: Callable[[Item], rx.Component] = lambda item: \
-    rx.dialog.root(
-      rx.dialog.trigger(rx.button(
-        rx.image(
-          src=item.image_url,
-          width="80px",
-          height="auto",
-          border_radius="15px",
-          margin="10px"
-        ),
-        rx.text(item.name, size="5"),
-        width="auto",
-        height="auto",
-        color_scheme='gray'
-      )),
-      rx.dialog.content(
-        rx.dialog.title(f"{item.name} (€{two_decimal_points(item.price)})"),
-        rx.dialog.description(item.description),
-        rx.flex(
-          rx.dialog.close(
-            rx.button("Order", on_click=State.order_item(item))
+    rx.cond(
+      item.deadline < now.hour * 60 + now.minute,
+      rx.text(f"{item.name}: (too late to order)"),
+      rx.dialog.root(
+        rx.dialog.trigger(rx.button(
+          rx.image(
+            src=item.image_url,
+            width="80px",
+            height="auto",
+            border_radius="15px",
+            margin="10px"
           ),
-          rx.dialog.close(rx.button(f"Cancel")),
-          spacing="3",
-          justify="end"
+          rx.text(item.name, size="5"),
+          width="auto",
+          height="auto",
+          color_scheme='gray'
+        )),
+        rx.dialog.content(
+          rx.dialog.title(f"{item.name} (€{two_decimal_points(item.price)})"),
+          rx.dialog.description(item.description),
+          rx.flex(
+            rx.dialog.close(
+              rx.button("Order", on_click=State.order_item(item))
+            ),
+            rx.dialog.close(rx.button(f"Cancel")),
+            spacing="3",
+            justify="end"
+          )
         )
       )
-    )
+    ) 
+    
+    
+
   return rx.container(
     rx.vstack(
       rx.heading(f"Hello {State.current_user.name}"),
