@@ -1,13 +1,16 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
 
 from datetime import datetime
-from typing import Callable, Dict, List, Optional
+from typing import Callable, List, Optional
 import uuid
 
-import reflex as rx
 import gspread
+import reflex as rx
 
-from obhonesty.aux import two_decimal_points
+from obhonesty.state import State
+from obhonesty.user import User
+from obhonesty.item import Item
+from obhonesty.aux import two_decimal_points 
 
 
 gclient = gspread.service_account()
@@ -16,48 +19,6 @@ user_sheet = spreadsheet.worksheet("users")
 item_sheet = spreadsheet.worksheet("items")
 order_sheet = spreadsheet.worksheet("orders")
 
-
-class User(rx.Base):
-  name: str
-  password: str
-  email: str
-  telephone: str
-  address: str
-
-  def __str__(self):
-    return f"User(name={self.name}, password={self.password})"
-
-  @staticmethod
-  def from_dict(x: Dict[str, str]):
-    return User(
-      name=x['name'],
-      password=x['password'],
-      email=x['email'],
-      telephone=x['telephone'],
-      address=x['address']
-    )
-
-
-class Item(rx.Base):
-  name: str
-  price: float
-  image_url: str
-  description: str
-  deadline: Optional[datetime]
-
-
-  @staticmethod
-  def from_dict(x: Dict[str, str]):
-    deadline_str: str = x['deadline']
-    deadline = None if deadline_str=="" \
-      else datetime.strptime(deadline_str, '%H:%M')
-    return Item(
-      name=x['name'],
-      price=x['price'],
-      image_url=x['image_url'],
-      description=x['description'],
-      deadline=deadline
-    )
 
 
 class State(rx.State):
@@ -96,7 +57,9 @@ class State(rx.State):
       quantity * item.price
     ])
     
-  
+ 
+
+
 
 def index() -> rx.Component:
   # Welcome Page (Index)
