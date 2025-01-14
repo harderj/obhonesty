@@ -5,7 +5,6 @@ import reflex as rx
 class Item(rx.Base):
   name: str
   price: float
-  image_url: str
   description: str
   deadline: int
 
@@ -20,7 +19,6 @@ class Item(rx.Base):
     return Item(
       name=x['name'],
       price=x['price'],
-      image_url=x['image_url'],
       description=x['description'],
       deadline=deadline
     )

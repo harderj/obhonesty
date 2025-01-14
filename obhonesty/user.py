@@ -2,22 +2,19 @@ from typing import Dict
 import reflex as rx
 
 class User(rx.Base):
-  name: str
-  password: str
+  nick_name: str
+  full_name: str
   email: str
-  telephone: str
+  phone_number: str
   address: str
-
-  def __str__(self):
-    return f"User(name={self.name}, password={self.password})"
 
   @staticmethod
   def from_dict(x: Dict[str, str]):
     return User(
-      name=x['name'],
-      password=x['password'],
+      nick_name=x['nick_name'],
+      full_name=x['full_name'],
       email=x['email'],
-      telephone=x['telephone'],
+      phone_number=x['phone_number'],
       address=x['address']
     )
 

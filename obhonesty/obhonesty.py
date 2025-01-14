@@ -20,12 +20,12 @@ item_sheet = spreadsheet.worksheet("items")
 order_sheet = spreadsheet.worksheet("orders")
 
 
-
 class State(rx.State):
   """The app state."""
   users: List[User]
   items: List[Item]
   current_user: Optional[User]
+  new_nick_name: str
 
   @rx.event
   def initialize(self): # -> List[Dict[str, str]]:
@@ -47,56 +47,62 @@ class State(rx.State):
     
   @rx.event
   def order_item(self, item: Item, quantity: float = 1.0):
-    print(f"{self.current_user.name} ordered {item.name}")
+    print(f"{self.current_user.nick_name} ordered {item.name}")
     order_sheet.append_row([
       str(uuid.uuid4()), 
-      self.current_user.name,
+      self.current_user.nick_name,
       str(datetime.now()),
       item.name,
       quantity,
       item.price,
       quantity * item.price
     ])
+
+  @rx.var
+  def invalid_new_user_name(self) -> bool:
+    return self.new_nick_name in [x.nick_name for x in self.users]
+  
+  @rx.event
+  def submit_signup(self, form_data: dict):
+    print(list(form_data.values()))
+    print(self.users[0])
+    user_sheet.append_row(list(form_data.values()))
+    return rx.redirect("/")
     
- 
-
-
 
 def index() -> rx.Component:
   # Welcome Page (Index)
   user_button: Callable[[User], rx.Component] = lambda user: \
-    rx.button(user.name, on_click=State.redirect_to_user_page(user))
+    rx.button(user.nick_name, on_click=State.redirect_to_user_page(user))
   return rx.container(
-    rx.vstack(
-      rx.heading("Welcome to the Olive Branch honest self-service", size="7"),
-      rx.text(f"Find yourself and place an order", size="5"),
-      rx.foreach(State.users, user_button),
+    rx.center(
+      rx.vstack(
+        rx.heading("Welcome to the Olive Branch honest self-service", size="7"),
+        rx.hstack(
+          rx.text("New here?", size="5"),
+          rx.button("Sign up for self-service", on_click=rx.redirect("/signup"))
+        ),
+        rx.text(f"Find yourself and place an order", size="5"),
+        rx.foreach(State.users, user_button),
+      )
     )
   )
 
 
 def user_page() -> rx.Component:
   now = datetime.now()
-  item_button: Callable[[Item], rx.Component] = lambda item: \
-    rx.cond(
+  def item_button(item: Item) -> rx.Component:
+    title: str = f"{item.name} (€{two_decimal_points(item.price)})"
+    return rx.cond(
       item.deadline < now.hour * 60 + now.minute,
-      rx.text(f"{item.name}: (too late to order)"),
+      rx.text(f"{title}: (too late to order)"),
       rx.dialog.root(
         rx.dialog.trigger(rx.button(
-          rx.image(
-            src=item.image_url,
-            width="80px",
-            height="auto",
-            border_radius="15px",
-            margin="10px"
-          ),
-          rx.text(item.name, size="5"),
-          width="auto",
-          height="auto",
+          title,
           color_scheme='gray'
         )),
         rx.dialog.content(
-          rx.dialog.title(f"{item.name} (€{two_decimal_points(item.price)})"),
+          rx.dialog.title(title),
           rx.dialog.description(item.description),
           rx.flex(
             rx.dialog.close(
@@ -108,16 +114,16 @@ def user_page() -> rx.Component:
           )
         )
       )
-    ) 
-    
-    
-
+    )
+  
   return rx.container(
-    rx.vstack(
-      rx.heading(f"Hello {State.current_user.name}"),
-      rx.button("Log out", on_click=rx.redirect("/")),
-      rx.text("Register an order:"),
-      rx.foreach(State.items, item_button)
+    rx.center(
+      rx.vstack(
+        rx.heading(f"Hello {State.current_user.nick_name}"),
+        rx.button("Log out", on_click=rx.redirect("/")),
+        rx.text("Register an order:"),
+        rx.foreach(State.items, item_button)
+      )
     )
   )
 
@@ -141,12 +147,102 @@ def admin() -> rx.Component:
       rx.text(f"Volunteers: {n_o_volunteers}"),
       rx.text(f"Total eating dinner: {n_o_dinner_signups + n_o_volunteers}")
     )
-  ) 
+  )
 
+message_name_already_taken: str = "Already taken"
 
+def signup_page() -> rx.Component:
+  return rx.container(
+    rx.center(
+      rx.vstack(
+        rx.heading("Welcome to the Olive Branch"),
+        rx.text("Please fill in your details to get started with self-service"),
+        rx.form(
+          rx.vstack(
+            rx.form.field(
+              rx.form.control(
+                rx.input(
+                  placeholder="Nick name (required)",
+                  on_change=State.set_new_nick_name,
+                  name="nick_name",
+                  required=True
+                ),
+                as_child=True
+              ),
+              rx.form.message(
+                message_name_already_taken,
+                match="valueMissing",
+                force_match=State.invalid_new_user_name,
+                color="var(--red-11)"
+              ),
+            ),
+            rx.input(
+              placeholder="Full name (required)",
+              name="full_name",
+              required=True
+            ),
+            rx.input(
+              placeholder="Phone number (required)",
+              name="phone_number",
+              required=True
+            ),
+            rx.input(
+              placeholder="Email (required)",
+              name="email",
+              required=True
+            ),
+            rx.input(
+              placeholder="Address (optional)",
+              name="address"
+            ),
+            rx.button("Submit", type="submit")
+          ),
+          on_submit=State.submit_signup,
+          reset_on_submit=True
+        ),
+        rx.button("Go back", on_click=rx.redirect("/")),
+      ),
+    ),
+  )
+
+         
 default_page_title: str = "OB Honesty system"
 
 app = rx.App()
 app.add_page(index, route="/", on_load=State.initialize)
 app.add_page(user_page, route="/user", on_load=State.redirect_no_user)
-app.add_page(admin, route="/admin")
+app.add_page(signup_page, route="/signup")
+app.add_page(admin, route="/admin") 
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      

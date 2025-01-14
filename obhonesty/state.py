@@ -40,10 +40,10 @@ class State(rx.State):
     
   @rx.event
   def order_item(self, item: Item, quantity: float = 1.0):
-    print(f"{self.current_user.name} ordered {item.name}")
+    print(f"{self.current_user.nick_name} ordered {item.name}")
     order_sheet.append_row([
       str(uuid.uuid4()), 
-      self.current_user.name,
+      self.current_user.nick_name,
       str(datetime.now()),
       item.name,
       quantity,
