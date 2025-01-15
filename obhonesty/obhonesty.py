@@ -47,7 +47,7 @@ class State(rx.State):
     
   @rx.event
   def order_item(self, item: Item, quantity: float = 1.0):
-    print(f"{self.current_user.nick_name} ordered {item.name}")
+    print(f"{self.current_user.nick_name} ordered {quantity} of {item.name}")
     order_sheet.append_row([
       str(uuid.uuid4()), 
       self.current_user.nick_name,
@@ -104,14 +104,17 @@ def user_page() -> rx.Component:
         rx.dialog.content(
           rx.dialog.title(title),
           rx.dialog.description(item.description),
-          rx.flex(
-            rx.dialog.close(
-              rx.button("Order", on_click=State.order_item(item))
+          rx.vstack(
+            rx.flex(
+              rx.dialog.close(
+                rx.button("Register", on_click=State.order_item(item))
+              ), 
+              rx.dialog.close(rx.button(f"Cancel")),
+              spacing="3",
+              justify="end" 
             ),
-            rx.dialog.close(rx.button(f"Cancel")),
-            spacing="3",
-            justify="end"
-          )
+            spacing="3"
+          ),
         )
       )
     )
@@ -121,7 +124,8 @@ def user_page() -> rx.Component:
       rx.vstack(
         rx.heading(f"Hello {State.current_user.nick_name}"),
         rx.button("Log out", on_click=rx.redirect("/")),
-        rx.text("Register an order:"),
+        rx.button("Sign up for dinner", on_click=rx.redirect("/dinner")),
+        rx.text("Register an item:"),
         rx.foreach(State.items, item_button)
       )
     )
@@ -151,7 +155,7 @@ def admin() -> rx.Component:
 
 message_name_already_taken: str = "Already taken"
 
-def signup_page() -> rx.Component:
+def user_signup_page() -> rx.Component:
   return rx.container(
     rx.center(
       rx.vstack(
@@ -205,44 +209,8 @@ def signup_page() -> rx.Component:
     ),
   )
 
-         
-default_page_title: str = "OB Honesty system"
-
 app = rx.App()
 app.add_page(index, route="/", on_load=State.initialize)
 app.add_page(user_page, route="/user", on_load=State.redirect_no_user)
-app.add_page(signup_page, route="/signup")
-app.add_page(admin, route="/admin") 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+app.add_page(user_signup_page, route="/signup")
+app.add_page(admin, route="/admin")
