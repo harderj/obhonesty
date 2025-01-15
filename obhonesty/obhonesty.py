@@ -1,7 +1,7 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
 
-from datetime import datetime, timedelta
-from typing import Callable, List, Optional
+from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
 import uuid
 
 import gspread
@@ -18,10 +18,24 @@ spreadsheet = gclient.open("test")
 user_sheet = spreadsheet.worksheet("users")
 item_sheet = spreadsheet.worksheet("items")
 order_sheet = spreadsheet.worksheet("orders")
+admin_sheet = spreadsheet.worksheet("admin")
 
+
+# class AdminData(rx.Base):
+#   dinner_price: float
+#   desert_price: float
+# 
+#   @staticmethod
+#   def from_dict(x: Dict[str, Any]):
+#     return AdminData(
+#       dinner_price=x['dinner_price'],
+#       desert_price=x['desert_price']
+#     )
+# 
 
 class State(rx.State):
   """The app state."""
+  admin_data: dict
   users: List[User]
   items: List[Item]
   current_user: Optional[User]
@@ -32,6 +46,7 @@ class State(rx.State):
     print("State.initize() called")
     user_data = user_sheet.get_all_records() 
     item_data = item_sheet.get_all_records()
+    self.admin_data = admin_sheet.get_all_records()[0]
     self.users = [User.from_dict(x) for x in user_data]
     self.items = [Item.from_dict(x) for x in item_data]
 
@@ -46,16 +61,26 @@ class State(rx.State):
       return rx.redirect("/")
     
   @rx.event
-  def order_item(self, item: Item, quantity: float = 1.0):
-    print(f"{self.current_user.nick_name} ordered {quantity} of {item.name}")
+  def order_item(self, item: Item):
     order_sheet.append_row([
       str(uuid.uuid4()), 
       self.current_user.nick_name,
       str(datetime.now()),
       item.name,
-      quantity,
-      item.price,
-      quantity * item.price
+      item.price
+    ])
+  
+  @rx.event
+  def order_dinner(self, form_data: dict):
+    order_sheet.append_row([
+      str(uuid.uuid4()), 
+      self.current_user.nick_name,
+      str(datetime.now()),
+      "Dinner sign-up",
+      self.admin_data['dinner_price'],
+      form_data['diner'],
+      form_data['diet'],
+      form_data['allergies']
     ])
 
   @rx.var
@@ -132,26 +157,43 @@ def user_page() -> rx.Component:
   )
 
 
+
+
 def admin() -> rx.Component:
   orders = order_sheet.get_all_records()
-  n_o_dinner_signups = len([
-    order for order in orders if order['item'] == "Sign-up for dinner" \
-    and datetime.fromisoformat(order['time']).date() == datetime.today().date()
-  ])
-  users = user_sheet.get_all_records()
-  n_o_volunteers = len([
-    user for user in users if user['volunteer'] == "yes" \
-    and user['away'] != "yes"
-  ])
-  return rx.container(
+  user_data = user_sheet.get_all_records()
+  signups = []
+  vegan_count: int = 0
+  vegetarian_count: int = 0
+  meat_count: int = 0
+  for user_dict in user_data:
+    user = User.from_dict(user_dict)
+    if user.volunteer:
+      signups.append([user.full_name, user.diet, user.allergies])
+      match user_dict["diet"]:
+        case "Vegetarian": vegetarian_count += 1
+        case "Meat": meat_count += 1
+        case _: vegan_count += 1
+  for order in orders:
+    if order["item"] == "Dinner sign-up" and \
+      datetime.fromisoformat(order['time']).date() == datetime.today().date():
+      signups.append([order['receiver'], order['diet'], order['allergies']])
+      match order["diet"]:
+        case "Vegetarian": vegetarian_count += 1
+        case "Meat": meat_count += 1
+        case _: vegan_count += 1
+
+  return rx.container(rx.center(
     rx.vstack(
       rx.heading(f"Admin"),
       rx.button("Return to index", on_click=rx.redirect("/")),
-      rx.text(f"Signed up for dinner: {n_o_dinner_signups}"),
-      rx.text(f"Volunteers: {n_o_volunteers}"),
-      rx.text(f"Total eating dinner: {n_o_dinner_signups + n_o_volunteers}")
+      rx.text(f"Total eating dinner: {len(signups)}"),
+      rx.text(f"Vegan: {vegan_count}"),
+      rx.text(f"Vegatarian: {vegetarian_count}"),
+      rx.text(f"Meat: {meat_count}"),
+      rx.data_table(data=signups, columns=["Name", "Diet", "Allergies"])   
     )
-  )
+  ))
 
 message_name_already_taken: str = "Already taken"
 
@@ -209,8 +251,39 @@ def user_signup_page() -> rx.Component:
     ),
   )
 
+def dinner_signup_page() -> rx.Component:
+  return rx.container(rx.center(
+    rx.vstack(
+      rx.form(
+        rx.vstack(
+          rx.heading("Sign up for dinner"),
+          rx.text("Name of dinner guest"),
+          rx.input(
+            placeholder="Name of diner",
+            default_value=State.current_user.full_name,
+            name="diner"
+          ),
+          rx.text("Dietary preferences"),
+          rx.select(
+            ["Vegan", "Vegetarian", "Meat"],
+            default_value="Vegan",
+            name="diet"
+          ),
+          rx.text("Allergies"),
+          rx.input(
+            name="allergies"
+          ),
+          rx.button("Register", type="submit")
+        ),
+        on_submit=State.order_dinner
+      ),
+      rx.button("Cancel", on_click=rx.redirect("/user"))
+    )
+  ))
+
 app = rx.App()
 app.add_page(index, route="/", on_load=State.initialize)
 app.add_page(user_page, route="/user", on_load=State.redirect_no_user)
 app.add_page(user_signup_page, route="/signup")
 app.add_page(admin, route="/admin")
+app.add_page(dinner_signup_page, route="/dinner")

@@ -7,6 +7,10 @@ class User(rx.Base):
   email: str
   phone_number: str
   address: str
+  volunteer: bool
+  away: bool
+  diet: str
+  allergies: str
 
   @staticmethod
   def from_dict(x: Dict[str, str]):
@@ -15,6 +19,10 @@ class User(rx.Base):
       full_name=x['full_name'],
       email=x['email'],
       phone_number=x['phone_number'],
-      address=x['address']
+      address=x['address'],
+      volunteer=x['volunteer'] == 'yes',
+      away=x['away'] == 'yes',
+      diet=x['diet'],
+      allergies=x['allergies']
     )
 

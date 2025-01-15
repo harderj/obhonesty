@@ -8,10 +8,10 @@ class Order(rx.Base):
   user: str
   time: datetime
   item: str
-  quantity: float
-  price_at_order_time: float
-  total_price: float
-  tags: str
+  price: float
+  receiver: str
+  diet: str
+  allergies: str
 
 
   @staticmethod
@@ -21,8 +21,8 @@ class Order(rx.Base):
       user=x['user'],
       time=datetime.fromisoformat(x['time']),
       item=x['item'],
-      quantity=x['quantity'],
-      price_at_order_time=x['price_at_order_time'],
-      total_price=x['total_price'],
-      tags=x['tags']
+      price=x['price'],
+      receiver=x['receiver'],
+      diet=x['diet'],
+      allergies=x['allergies']
     )
