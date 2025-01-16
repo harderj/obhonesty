@@ -12,6 +12,7 @@ class Order(rx.Base):
   receiver: str
   diet: str
   allergies: str
+  served: bool
 
 
   @staticmethod
@@ -24,5 +25,6 @@ class Order(rx.Base):
       price=x['price'],
       receiver=x['receiver'],
       diet=x['diet'],
-      allergies=x['allergies']
+      allergies=x['allergies'],
+      served=x['served']=="yes"
     )
