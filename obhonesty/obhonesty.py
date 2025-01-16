@@ -35,11 +35,12 @@ admin_sheet = spreadsheet.worksheet("admin")
 
 class State(rx.State):
   """The app state."""
-  admin_data: dict
+  admin_data: Dict[str, Any]
   users: List[User]
   items: List[Item]
   current_user: Optional[User]
   new_nick_name: str
+  custom_item_price: str
 
   @rx.event
   def initialize(self): # -> List[Dict[str, str]]:
@@ -71,6 +72,18 @@ class State(rx.State):
     ])
   
   @rx.event
+  def order_custom_item(self, form_data: dict):
+    order_sheet.append_row([
+      str(uuid.uuid4()), 
+      self.current_user.nick_name,
+      str(datetime.now()),
+      form_data['custom_item_name'],
+      float(form_data['custom_item_price']),
+      form_data['custom_item_description']
+    ])
+    return rx.redirect("/user")
+  
+  @rx.event
   def order_dinner(self, form_data: dict):
     order_sheet.append_row([
       str(uuid.uuid4()), 
@@ -83,9 +96,29 @@ class State(rx.State):
       form_data['allergies']
     ])
 
-  @rx.var
+  @rx.var(cache=True)
   def invalid_new_user_name(self) -> bool:
     return self.new_nick_name in [x.nick_name for x in self.users]
+  
+  @rx.var(cache=True)
+  def invalid_custom_item_price(self) -> bool:
+    try:
+      # Convert to float and check decimals
+      float_val = float(self.custom_item_price)
+      # Optionally check decimal places
+      if len(str(float_val).split('.')[-1]) <= 2:  # For 2 decimal places
+        return False
+      return True
+    except ValueError:
+      return True
+  
+  @rx.var(cache=True)
+  def dinner_signup_deadline_minutes(self) -> int:
+    try:
+      time = datetime.strptime(self.admin_data['dinner_signup_deadline'], "%H:%M")
+    except:
+      time = datetime.strptime("23:59", "%H:%M")
+    return time.hour * 60 + time.minute
   
   @rx.event
   def submit_signup(self, form_data: dict):
@@ -115,13 +148,9 @@ def index() -> rx.Component:
 
 
 def user_page() -> rx.Component:
-  now = datetime.now()
   def item_button(item: Item) -> rx.Component:
     title: str = f"{item.name} (€{two_decimal_points(item.price)})"
-    return rx.cond(
-      item.deadline < now.hour * 60 + now.minute,
-      rx.text(f"{title}: (too late to order)"),
-      rx.dialog.root(
+    return rx.dialog.root(
         rx.dialog.trigger(rx.button(
           title,
           color_scheme='gray'
@@ -142,21 +171,53 @@ def user_page() -> rx.Component:
           ),
         )
       )
-    )
-  
-  return rx.container(
-    rx.center(
+  now = datetime.now()
+  return rx.container(rx.center(rx.vstack(
+    rx.heading(f"Hello {State.current_user.nick_name}"),
+    rx.button("Log out", on_click=rx.redirect("/")),
+    rx.cond(
+      State.dinner_signup_deadline_minutes < now.hour * 60 + now.minute,
+      rx.text(f"Dinner sign-up closed (last sign-up at {State.admin_data['dinner_signup_deadline']})"),
+      rx.button("Sign up for dinner", on_click=rx.redirect("/dinner"))
+    ),
+    rx.text("Register an item:"), 
+    rx.button("Custom item", on_click=rx.redirect("/custom_item")),
+    rx.foreach(State.items, item_button)
+  )))
+
+
+def custom_item_page() -> rx.Component:
+  return rx.container(rx.center(rx.vstack(
+    rx.heading("Register custom item"),
+    rx.form(
       rx.vstack(
-        rx.heading(f"Hello {State.current_user.nick_name}"),
-        rx.button("Log out", on_click=rx.redirect("/")),
-        rx.button("Sign up for dinner", on_click=rx.redirect("/dinner")),
-        rx.text("Register an item:"),
-        rx.foreach(State.items, item_button)
-      )
-    )
-  )
-
-
+        rx.text("Name"),
+        rx.input(placeholder="What did you get?", name="custom_item_name"),
+        rx.text("Price"),
+        rx.form.field(
+          rx.form.control(
+            rx.input(
+              placeholder="E.g. 2.50 for (2.50€)",
+              name="custom_item_price",
+              on_change=State.set_custom_item_price
+            ),
+            as_child=True
+          ),
+          rx.form.message(
+            "Please enter a valid price",
+            match="valueMissing",
+            force_match=State.invalid_custom_item_price,
+            color="var(--red-11)"
+          )
+        ),
+        rx.text("Comment"),
+        rx.input(placeholder="optional", name="custom_item_description"),
+        rx.button("Register", type="submit")
+      ),
+      on_submit=State.order_custom_item
+    ),
+    rx.button("Cancel", on_click=rx.redirect("/user"))
+  )))
 
 
 def admin() -> rx.Component:
@@ -287,3 +348,4 @@ app.add_page(user_page, route="/user", on_load=State.redirect_no_user)
 app.add_page(user_signup_page, route="/signup")
 app.add_page(admin, route="/admin")
 app.add_page(dinner_signup_page, route="/dinner")
+app.add_page(custom_item_page, route="/custom_item")
