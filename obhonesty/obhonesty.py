@@ -35,6 +35,43 @@ admin_sheet = spreadsheet.worksheet("admin")
 
 breakfast_items = ["Small", "Continental", "Full English", "Vegetarian", "Vegan"]
 
+class Order(rx.Base):
+  order_id: str
+  user_nick_name: str
+  time: datetime
+  item: str
+  price: float
+  receiver: str
+  diet: str
+  allergies: str
+  served: str
+
+  @staticmethod
+  def from_dict(x: dict):
+    return Order(
+      order_id=x["order_id"],
+      user_nick_name=x["user"],
+      time=datetime.fromisoformat(x["time"]),
+      item=x["item"],
+      price=x["price"],
+      receiver=x["receiver"],
+      diet=x["diet"],
+      allergies=x["allergies"],
+      served=x["served"]
+    )
+
+class OrderRepr(rx.Base):
+  time: str
+  item: str
+  price: str
+
+  @staticmethod
+  def from_order(order: Order):
+    return OrderRepr(
+      time=order.time.strftime("%Y-%m-%d, %H:%M:%S"),
+      item=order.item,
+      price=f"{order.price:.2f}€"
+    )
 
 class State(rx.State):
   """The app state."""
@@ -44,15 +81,18 @@ class State(rx.State):
   current_user: Optional[User]
   new_nick_name: str
   custom_item_price: str
+  orders: List[Order]
 
   @rx.event
   def initialize(self): # -> List[Dict[str, str]]:
     print("State.initize() called")
     user_data = user_sheet.get_all_records() 
     item_data = item_sheet.get_all_records()
+    order_data = order_sheet.get_all_records()
     self.admin_data = admin_sheet.get_all_records()[0]
     self.users = [User.from_dict(x) for x in user_data]
     self.items = [Item.from_dict(x) for x in item_data]
+    self.orders = [Order.from_dict(x) for x in order_data]
 
   @rx.event
   def redirect_to_user_page(self, user: User):
@@ -113,6 +153,15 @@ class State(rx.State):
       menu_item,
       form_data['allergies']
     ])
+  
+  @rx.var(cache=True)
+  def current_user_orders(self) -> List[OrderRepr]:
+    filtered: List[OrderRepr] = []
+    for order in self.orders:
+      if order.user_nick_name == self.current_user.nick_name:
+        filtered.append(OrderRepr.from_order(order))
+    return filtered
+ 
 
   @rx.var(cache=True)
   def invalid_new_user_name(self) -> bool:
@@ -128,7 +177,7 @@ class State(rx.State):
         return False
       return True
     except ValueError:
-      return True
+      return True 
   
   @rx.var(cache=True)
   def dinner_signup_deadline_minutes(self) -> int:
@@ -201,6 +250,7 @@ def user_page() -> rx.Component:
   return rx.container(rx.center(rx.vstack(
     rx.heading(f"Hello {State.current_user.nick_name}"),
     rx.button("Log out", on_click=rx.redirect("/")),
+    rx.button("View orders", on_click=rx.redirect("/info")),
     rx.cond(
       State.breakfast_signup_deadline_minutes < now.hour * 60 + now.minute,
       rx.text(f"Breakfast sign-up closed (last sign-up at {State.admin_data['breakfast_signup_deadline']})"),
@@ -292,7 +342,7 @@ def admin_dinner() -> rx.Component:
       rx.text(f"Vegan: {vegan_count}"),
       rx.text(f"Vegatarian: {vegetarian_count}"),
       rx.text(f"Meat: {meat_count}"),
-      rx.data_table(data=signups, columns=["Name", "Diet", "Allergies"])   
+      rx.data_table(data=signups, columns=["Name", "Diet", "Allergies"])
     )
   ))
 
@@ -429,6 +479,34 @@ def breakfast_signup_page() -> rx.Component:
     )
   ))
 
+
+def user_info_page() -> rx.Component:
+  def show_row(order: OrderRepr):
+    return rx.table.row(
+      rx.table.cell(order.time),
+      rx.table.cell(order.item),
+      rx.table.cell(order.price)
+    )
+  
+  return rx.container(rx.center(rx.vstack(
+    rx.heading(f"Hello {State.current_user.nick_name}"),
+    rx.button(f"Back to orders and items", on_click=rx.redirect("/user")),
+    rx.table.root(
+      rx.table.header(
+        rx.table.row(
+          rx.table.column_header_cell("Time"),
+          rx.table.column_header_cell("Item"),
+          rx.table.column_header_cell("Price")
+        )
+      ),
+      rx.table.body(
+        rx.foreach(
+          State.current_user_orders, show_row
+        )
+      )
+    )
+  )))
+
 app = rx.App()
 app.add_page(index, route="/", on_load=State.initialize)
 app.add_page(user_page, route="/user", on_load=State.redirect_no_user)
@@ -439,3 +517,4 @@ app.add_page(admin_breakfast, route="/admin/breakfast")
 app.add_page(dinner_signup_page, route="/dinner")
 app.add_page(breakfast_signup_page, route="/breakfast")
 app.add_page(custom_item_page, route="/custom_item")
+app.add_page(user_info_page, route="/info", on_load=State.initialize)
