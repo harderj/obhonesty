@@ -6,11 +6,13 @@ class Item(rx.Base):
   name: str
   price: float
   description: str
+  tax_category: str
 
   @staticmethod
   def from_dict(x: Dict[str, str]):
     return Item(
       name=x['name'],
       price=x['price'],
-      description=x['description']
+      description=x['description'],
+      tax_category=x['tax_category']
     )

@@ -1,12 +1,13 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
 
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 import uuid
 
 import gspread
 import reflex as rx
 
+from obhonesty.order import Order, OrderRepr
 from obhonesty.state import State
 from obhonesty.user import User
 from obhonesty.item import Item
@@ -20,58 +21,25 @@ item_sheet = spreadsheet.worksheet("items")
 order_sheet = spreadsheet.worksheet("orders")
 admin_sheet = spreadsheet.worksheet("admin")
 
+# hard coding is underrated right
 
-# class AdminData(rx.Base):
-#   dinner_price: float
-#   desert_price: float
-# 
-#   @staticmethod
-#   def from_dict(x: Dict[str, Any]):
-#     return AdminData(
-#       dinner_price=x['dinner_price'],
-#       desert_price=x['desert_price']
-#     )
-# 
+breakfast_items = [
+  "Vegan",
+  "Small",
+  "Continental",
+  "Full English",
+  "Vegetarian",
+  "Packed Lunch (Vegan)",
+  "Packed Lunch (Vegetarian)",
+  "Packed Lunch (Meat)"
+]
 
-breakfast_items = ["Small", "Continental", "Full English", "Vegetarian", "Vegan"]
-
-class Order(rx.Base):
-  order_id: str
-  user_nick_name: str
-  time: datetime
-  item: str
-  price: float
-  receiver: str
-  diet: str
-  allergies: str
-  served: str
-
-  @staticmethod
-  def from_dict(x: dict):
-    return Order(
-      order_id=x["order_id"],
-      user_nick_name=x["user"],
-      time=datetime.fromisoformat(x["time"]),
-      item=x["item"],
-      price=x["price"],
-      receiver=x["receiver"],
-      diet=x["diet"],
-      allergies=x["allergies"],
-      served=x["served"]
-    )
-
-class OrderRepr(rx.Base):
-  time: str
-  item: str
-  price: str
-
-  @staticmethod
-  def from_order(order: Order):
-    return OrderRepr(
-      time=order.time.strftime("%Y-%m-%d, %H:%M:%S"),
-      item=order.item,
-      price=f"{order.price:.2f}€"
-    )
+tax_categories = [
+  "Food and beverage non-alcoholic",
+  "Beverage with alcohol",
+  "Fitness",
+  "Miscellaneous"
+]
 
 class State(rx.State):
   """The app state."""
@@ -84,8 +52,7 @@ class State(rx.State):
   orders: List[Order]
 
   @rx.event
-  def initialize(self): # -> List[Dict[str, str]]:
-    print("State.initize() called")
+  def initialize(self):
     user_data = user_sheet.get_all_records() 
     item_data = item_sheet.get_all_records()
     order_data = order_sheet.get_all_records()
@@ -111,8 +78,18 @@ class State(rx.State):
       self.current_user.nick_name,
       str(datetime.now()),
       item.name,
-      item.price
+      item.price,
+      "",
+      "",
+      "",
+      "",
+      item.tax_category,
+      ""
     ])
+    return rx.toast.info(
+      f"'{item.name}' registered succesfully. Thank you!",
+      position="bottom-center"
+    )
   
   @rx.event
   def order_custom_item(self, form_data: dict):
@@ -122,6 +99,11 @@ class State(rx.State):
       str(datetime.now()),
       form_data['custom_item_name'],
       float(form_data['custom_item_price']),
+      "",
+      "",
+      "",
+      "",
+      form_data['tax_category'],
       form_data['custom_item_description']
     ])
     return rx.redirect("/user")
@@ -136,7 +118,10 @@ class State(rx.State):
       self.admin_data['dinner_price'],
       form_data['diner'],
       form_data['diet'],
-      form_data['allergies']
+      form_data['allergies'],
+      "",
+      "Food and beverage non-alcoholic",
+      ""
     ])
 
   @rx.event
@@ -148,11 +133,21 @@ class State(rx.State):
       self.current_user.nick_name,
       str(datetime.now()),
       "Breakfast sign-up",
-      self.admin_data[key],
+      self.admin_data[key] if not self.current_user.volunteer else 0.0,
       form_data['full_name'],
       menu_item,
-      form_data['allergies']
+      form_data['allergies'],
+      "",
+      "Food and beverage non-alcoholic",
+      ""
     ])
+  
+  @rx.event
+  def submit_signup(self, form_data: dict):
+    print(list(form_data.values()))
+    print(self.users[0])
+    user_sheet.append_row(list(form_data.values()))
+    return rx.redirect("/")
   
   @rx.var(cache=True)
   def current_user_orders(self) -> List[OrderRepr]:
@@ -195,13 +190,68 @@ class State(rx.State):
       time = datetime.strptime("23:59", "%H:%M")
     return time.hour * 60 + time.minute
   
-  @rx.event
-  def submit_signup(self, form_data: dict):
-    print(list(form_data.values()))
-    print(self.users[0])
-    user_sheet.append_row(list(form_data.values()))
-    return rx.redirect("/")
-    
+  @rx.var(cache=True)
+  def tax_categories(self) -> Dict[str, float]:
+    result: Dict[str, float] = {}
+    for order in self.orders:
+      if not order.tax_category in result:
+        result[order.tax_category] = 0.0
+      result[order.tax_category] += order.price
+    return result
+
+  @rx.var(cache=True)
+  def breakfast_signups(self) -> List[List[str]]:
+    signups = []
+    for order in self.orders:
+      if order.item == "Breakfast sign-up" and \
+        order.time.date() == datetime.today().date():
+        signups.append([
+          order.time.strftime("%H:%M:%S"),
+          order.receiver,
+          order.diet,
+          order.allergies
+        ])
+    return signups
+  
+  @rx.var(cache=True)
+  def dinner_signups(self) -> List[List[str]]:
+    signups = []
+    for order in self.orders:
+      if order.item == "Dinner sign-up" and \
+        order.time.date() == datetime.today().date():
+        signups.append([order.receiver, order.diet, order.allergies, "no"])
+    for user in self.users:
+      if user.volunteer:
+        signups.append([user.full_name, user.diet, user.allergies, "yes"])
+    return signups
+  
+  @rx.var(cache=True)
+  def dinner_count(self) -> int:
+    return len(self.dinner_signups)
+  
+  @rx.var(cache=True)
+  def dinner_count_vegan(self) -> int:
+    count = 0 
+    for order in self.dinner_signups:
+      if order[1] == "Vegan":
+        count += 1
+    return count
+  
+  @rx.var(cache=True)
+  def dinner_count_vegetarian(self) -> int:
+    count = 0 
+    for order in self.dinner_signups:
+      if order[1] == "Vegetarian":
+        count += 1
+    return count
+  
+  @rx.var(cache=True)
+  def dinner_count_meat(self) -> int:
+    count = 0 
+    for order in self.dinner_signups:
+      if order[1] == "Meat":
+        count += 1
+    return count   
 
 def index() -> rx.Component:
   # Welcome Page (Index)
@@ -254,8 +304,8 @@ def user_page() -> rx.Component:
     rx.cond(
       State.breakfast_signup_deadline_minutes < now.hour * 60 + now.minute,
       rx.text(f"Breakfast sign-up closed (last sign-up at {State.admin_data['breakfast_signup_deadline']})"),
-      rx.button("Sign up for breakfast", on_click=rx.redirect("/breakfast"))
-    ),
+      rx.button("Sign up for breakfast / packed lunch", on_click=rx.redirect("/breakfast"))
+    ), 
     rx.cond(
       State.dinner_signup_deadline_minutes < now.hour * 60 + now.minute,
       rx.text(f"Dinner sign-up closed (last sign-up at {State.admin_data['dinner_signup_deadline']})"),
@@ -291,6 +341,12 @@ def custom_item_page() -> rx.Component:
             color="var(--red-11)"
           )
         ),
+        rx.text("Category"),
+        rx.select(
+          tax_categories,
+          default_value=tax_categories[0],
+          name="tax_category"
+        ),
         rx.text("Comment"),
         rx.input(placeholder="optional", name="custom_item_description"),
         rx.button("Register", type="submit")
@@ -306,60 +362,42 @@ def admin() -> rx.Component:
     rx.vstack(
       rx.heading(f"Admin"),
       rx.button("Dinner", on_click=rx.redirect("/admin/dinner")),
-      rx.button("Breakfast", on_click=rx.redirect("/admin/breakfast"))
+      rx.button("Breakfast", on_click=rx.redirect("/admin/breakfast")),
+      rx.button("Tax", on_click=rx.redirect("/admin/tax"))
     ) 
   ))
 
+
+def admin_tax() -> rx.Component:
+  return rx.container(rx.center(rx.vstack(
+    rx.heading("Tax categories"),
+    rx.button("Go back", on_click=rx.redirect("/admin")),
+    rx.foreach(
+      State.tax_categories.items(),
+      lambda x: rx.text(f"{x[0]}: {x[1]}")
+    )
+  )))
+
 def admin_dinner() -> rx.Component:
-  orders = order_sheet.get_all_records()
-  user_data = user_sheet.get_all_records()
-  signups = []
-  vegan_count: int = 0
-  vegetarian_count: int = 0
-  meat_count: int = 0
-  for user_dict in user_data:
-    user = User.from_dict(user_dict)
-    if user.volunteer:
-      signups.append([user.full_name, user.diet, user.allergies])
-      match user_dict["diet"]:
-        case "Vegetarian": vegetarian_count += 1
-        case "Meat": meat_count += 1
-        case _: vegan_count += 1
-  for order in orders:
-    if order["item"] == "Dinner sign-up" and \
-      datetime.fromisoformat(order['time']).date() == datetime.today().date():
-      signups.append([order['receiver'], order['diet'], order['allergies']])
-      match order["diet"]:
-        case "Vegetarian": vegetarian_count += 1
-        case "Meat": meat_count += 1
-        case _: vegan_count += 1
-  
   return rx.container(rx.center(
     rx.vstack(
       rx.heading("Dinner"),
       rx.button("Go back", on_click=rx.redirect("/admin")),
-      rx.text(f"Total eating dinner: {len(signups)}"),
-      rx.text(f"Vegan: {vegan_count}"),
-      rx.text(f"Vegatarian: {vegetarian_count}"),
-      rx.text(f"Meat: {meat_count}"),
-      rx.data_table(data=signups, columns=["Name", "Diet", "Allergies"])
+      rx.text(f"Total eating dinner: {State.dinner_count}"),
+      rx.text(f"Vegan: {State.dinner_count_vegan}"),
+      rx.text(f"Vegatarian: {State.dinner_count_vegetarian}"),
+      rx.text(f"Meat: {State.dinner_count_meat}"),
+      rx.data_table(data=State.dinner_signups, columns=["Name", "Diet", "Allergies", "Volunteer"])
     )
   ))
 
 def admin_breakfast() -> rx.Component:
-  orders = order_sheet.get_all_records()
-  signups = []
-  for order in orders:
-    if order["item"] == "Breakfast sign-up" and \
-      datetime.fromisoformat(order['time']).date() == datetime.today().date():
-      signups.append([order['receiver'], order['diet'], order['allergies']])
-  
   return rx.container(rx.center(
     rx.vstack(
       rx.heading("Breakfast"),
       rx.button("Go back", on_click=rx.redirect("/admin")),
-      rx.text(f"Total eating breakfast: {len(signups)}"),
-      rx.data_table(data=signups, columns=["Name", "Diet", "Allergies"])   
+      # rx.text(f"Total eating breakfast: {len(signups)}"),
+      rx.data_table(data=State.breakfast_signups, columns=["Time", "Name", "Diet", "Allergies"])   
     )
   ))
 
@@ -393,7 +431,8 @@ def user_signup_page() -> rx.Component:
             rx.input(
               placeholder="Full name (required)",
               name="full_name",
-              required=True
+              required=True,
+              type="email"
             ),
             rx.input(
               placeholder="Phone number (required)",
@@ -462,9 +501,15 @@ def breakfast_signup_page() -> rx.Component:
             name="full_name"
           ),
           rx.text("Menu"),
-          rx.select(
-            breakfast_items,
-            default_value="Vegan",
+          rx.select.root(
+            rx.select.trigger(),
+            rx.select.content(
+              rx.foreach(
+                breakfast_items,
+                lambda item: rx.select.item(f"{item} ({State.admin_data[item + "_price"]}€)", value=item)
+              )
+            ),
+            default_value=breakfast_items[0],
             name="menu_item"
           ),
           rx.text("Allergies"),
@@ -512,8 +557,9 @@ app.add_page(index, route="/", on_load=State.initialize)
 app.add_page(user_page, route="/user", on_load=State.redirect_no_user)
 app.add_page(user_signup_page, route="/signup")
 app.add_page(admin, route="/admin")
-app.add_page(admin_dinner, route="/admin/dinner")
-app.add_page(admin_breakfast, route="/admin/breakfast")
+app.add_page(admin_dinner, route="/admin/dinner", on_load=State.initialize)
+app.add_page(admin_breakfast, route="/admin/breakfast", on_load=State.initialize)
+app.add_page(admin_tax, route="/admin/tax", on_load=State.initialize)
 app.add_page(dinner_signup_page, route="/dinner")
 app.add_page(breakfast_signup_page, route="/breakfast")
 app.add_page(custom_item_page, route="/custom_item")
