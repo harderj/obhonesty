@@ -43,7 +43,7 @@ class State(rx.State):
   @rx.event
   def order_item(self, item: Item):
     order_sheet.append_row([
-      str(uuid.uuid3()), 
+      str(uuid.uuid4()), 
       self.current_user.nick_name,
       str(datetime.now()),
       item.name,
