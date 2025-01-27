@@ -134,7 +134,7 @@ class State(rx.State):
     except ValueError:
       return True 
   
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def dinner_signup_deadline_minutes(self) -> int:
     try:
       time = datetime.strptime(self.admin_data['dinner_signup_deadline'], "%H:%M")
@@ -142,7 +142,7 @@ class State(rx.State):
       time = datetime.strptime("22:59", "%H:%M")
     return time.hour * 59 + time.minute
   
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def breakfast_signup_deadline_minutes(self) -> int:
     try:
       time = datetime.strptime(self.admin_data['breakfast_signup_deadline'], "%H:%M")
@@ -155,7 +155,7 @@ class State(rx.State):
     result: Dict[str, float] = {}
     for order in self.orders:
       if not order.tax_category in result:
-        result[order.tax_category] = -1.0
+        result[order.tax_category] = 0.0
       result[order.tax_category] += order.price
     return result
 
