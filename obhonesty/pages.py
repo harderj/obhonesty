@@ -40,16 +40,32 @@ def user_page() -> rx.Component:
         )),
         rx.dialog.content(
           rx.dialog.title(title),
-          rx.dialog.description(item.description),
+          rx.dialog.description(item.description),	
           rx.vstack(
-            rx.flex(
-              rx.dialog.close(
-                rx.button("Register", on_click=State.order_item(item))
-              ), 
-              rx.dialog.close(rx.button(f"Cancel")),
-              spacing="3",
-              justify="end" 
-            ),
+            rx.form(
+              rx.flex(
+                rx.input(
+                  name="item_name",
+                  type="hidden",
+                  value=item.name
+                ),
+                rx.input(
+                  placeholder="Quantity",
+                  name="quantity",
+                  default_value='1.0',
+                  # type="number"
+                )
+              ),
+              rx.flex(
+                rx.dialog.close(
+                  rx.button("Register", type="submit")
+                ), 
+                rx.dialog.close(rx.button(f"Cancel")),
+                spacing="3",
+                justify="end" 
+              ),
+              on_submit=State.order_item
+            ), 
             spacing="3"
           ),
         )
@@ -71,7 +87,7 @@ def user_page() -> rx.Component:
     ),
     rx.text("Register an item:"), 
     rx.button("Custom item", on_click=rx.redirect("/custom_item")),
-    rx.foreach(State.items, item_button)
+    rx.foreach(State.items.values(), item_button)
   )))
 
 
@@ -222,8 +238,8 @@ def dinner_signup_page() -> rx.Component:
       rx.form(
         rx.vstack(
           rx.heading("Sign up for dinner"),
-					rx.text("Note: you are signing up for todays dinner. Sign up again tomorrow for tomorrows dinner."),
-					rx.spacer(),
+          rx.text("Note: you are signing up for todays dinner. Sign up again tomorrow for tomorrows dinner."),
+          rx.spacer(),
           rx.text("Name of dinner guest"),
           rx.input(
             placeholder="Name of diner",
@@ -254,8 +270,8 @@ def breakfast_signup_page() -> rx.Component:
       rx.form(
         rx.vstack(
           rx.heading("Sign up for breakfast"),
-					rx.text("Note: you are signing up for todays breakfast. Sign up again tomorrow for tomorrows breakfast."),
-					rx.spacer(),
+          rx.text("Note: you are signing up for todays breakfast. Sign up again tomorrow for tomorrows breakfast."),
+          rx.spacer(),
           rx.text("Name of breakfast guest"),
           rx.input(
             placeholder="Name",

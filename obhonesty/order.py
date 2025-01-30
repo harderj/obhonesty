@@ -8,7 +8,9 @@ class Order(rx.Base):
   user_nick_name: str
   time: datetime
   item: str
+  quantity: float
   price: float
+  total: float
   receiver: str
   diet: str
   allergies: str
@@ -22,7 +24,9 @@ class Order(rx.Base):
       user_nick_name=x['user'],
       time=datetime.fromisoformat(x['time']),
       item=x['item'],
-      price=x['price'],
+      quantity=float(x['quantity']),
+      price=float(x['price']),
+      total=float(x['total']),
       receiver=x['receiver'],
       diet=x['diet'],
       allergies=x['allergies'],

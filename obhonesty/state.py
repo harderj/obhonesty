@@ -14,20 +14,23 @@ class State(rx.State):
   """The app state."""
   admin_data: Dict[str, Any]
   users: List[User]
-  items: List[Item]
+  items: Dict[str, Item]
   current_user: Optional[User]
   new_nick_name: str
   custom_item_price: str
   orders: List[Order]
 
   @rx.event
-  def initialize(self):
+  def reload_user_and_item_data(self):
     user_data = user_sheet.get_all_records() 
     item_data = item_sheet.get_all_records()
-    order_data = order_sheet.get_all_records()
     self.admin_data = admin_sheet.get_all_records()[-1]
     self.users = [User.from_dict(x) for x in user_data]
-    self.items = [Item.from_dict(x) for x in item_data]
+    self.items = {x['name'] : Item.from_dict(x) for x in item_data}
+  
+  @rx.event
+  def reload_order_data(self):
+    order_data = order_sheet.get_all_records()
     self.orders = [Order.from_dict(x) for x in order_data]
 
   @rx.event
@@ -41,13 +44,20 @@ class State(rx.State):
       return rx.redirect("/")
     
   @rx.event
-  def order_item(self, item: Item):
+  def order_item(self, form_data: dict):
+    item = self.items[form_data['item_name']]
+    try:
+      quantity = float(form_data['quantity'])
+    except:
+      return rx.toast.error("Failed to register. Quantity must be a number")
     order_sheet.append_row([
       str(uuid.uuid4()), 
       self.current_user.nick_name,
       str(datetime.now()),
       item.name,
+      quantity,
       item.price,
+      quantity * item.price,
       "", "", "", "",
       item.tax_category,
       ""
@@ -59,11 +69,14 @@ class State(rx.State):
   
   @rx.event
   def order_custom_item(self, form_data: dict):
+    item_name = form_data['custom_item_name']
     order_sheet.append_row([
-      str(uuid.uuid3()), 
+      str(uuid.uuid4()), 
       self.current_user.nick_name,
       str(datetime.now()),
-      form_data['custom_item_name'],
+      item_name,
+      1.0,
+      float(form_data['custom_item_price']),
       float(form_data['custom_item_price']),
       "", "", "", "",
       form_data['tax_category'],
@@ -74,10 +87,12 @@ class State(rx.State):
   @rx.event
   def order_dinner(self, form_data: dict):
     order_sheet.append_row([
-      str(uuid.uuid3()), 
+      str(uuid.uuid4()), 
       self.current_user.nick_name,
       str(datetime.now()),
       "Dinner sign-up",
+      1.0,
+      self.admin_data['dinner_price'],
       self.admin_data['dinner_price'],
       form_data['diner'],
       form_data['diet'],
@@ -86,17 +101,21 @@ class State(rx.State):
       "Food and beverage non-alcoholic",
       ""
     ])
+    return rx.toast.info("Dinner sign-up successful")
 
   @rx.event
   def order_breakfast(self, form_data: dict):
     menu_item = form_data['menu_item']
     key = f"{menu_item}_price"
+    price = self.admin_data[key] if not self.current_user.volunteer else -1.0
     order_sheet.append_row([
-      str(uuid.uuid3()), 
+      str(uuid.uuid4()), 
       self.current_user.nick_name,
       str(datetime.now()),
       "Breakfast sign-up",
-      self.admin_data[key] if not self.current_user.volunteer else -1.0,
+      1.0,
+      price,
+      price,
       form_data['full_name'],
       menu_item,
       form_data['allergies'],
@@ -104,6 +123,7 @@ class State(rx.State):
       "Food and beverage non-alcoholic",
       ""
     ])
+    return rx.toast.info("Breakfast/pack-lunch sign-up successful")
   
   @rx.event
   def submit_signup(self, form_data: dict):
