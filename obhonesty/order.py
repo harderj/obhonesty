@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Dict
 import reflex as rx
 
@@ -6,7 +5,7 @@ import reflex as rx
 class Order(rx.Base):
   order_id: str
   user_nick_name: str
-  time: datetime
+  time: str
   item: str
   quantity: float
   price: float
@@ -14,7 +13,7 @@ class Order(rx.Base):
   receiver: str
   diet: str
   allergies: str
-  served: bool
+  served: str
   tax_category: str
 
   @staticmethod
@@ -22,7 +21,7 @@ class Order(rx.Base):
     return Order(
       order_id=x['order_id'],
       user_nick_name=x['user'],
-      time=datetime.fromisoformat(x['time']),
+      time=x['time'],
       item=x['item'],
       quantity=float(x['quantity']),
       price=float(x['price']),
@@ -30,25 +29,8 @@ class Order(rx.Base):
       receiver=x['receiver'],
       diet=x['diet'],
       allergies=x['allergies'],
-      served=x['served']=="yes",
+      served=x['served'],
       tax_category=x['tax_category'],
       description=x['comment']
     )
   
-
-class OrderRepr(rx.Base):
-  time: str
-  item: str
-  quantity: float
-  price: float
-  total: float
-
-  @staticmethod
-  def from_order(order: Order):
-    return OrderRepr(
-      time=order.time.strftime("%Y-%m-%d, %H:%M:%S"),
-      item=order.item,
-      quantity=order.quantity,
-      price=order.price,
-      total=order.total
-    )

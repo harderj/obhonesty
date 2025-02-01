@@ -7,7 +7,7 @@ import reflex as rx
 
 from obhonesty.user import User
 from obhonesty.item import Item
-from obhonesty.order import Order, OrderRepr
+from obhonesty.order import Order
 from obhonesty.sheet import user_sheet, item_sheet, order_sheet, admin_sheet
 
 class State(rx.State):
@@ -112,7 +112,7 @@ class State(rx.State):
   def order_breakfast(self, form_data: dict):
     menu_item = form_data['menu_item']
     key = f"{menu_item}_price"
-    price = self.admin_data[key] if not self.current_user.volunteer else -1.0
+    price = self.admin_data[key] if not self.current_user.volunteer else 0.0
     order_sheet.append_row([
       str(uuid.uuid4()), 
       self.current_user.nick_name,
@@ -136,11 +136,11 @@ class State(rx.State):
     return rx.redirect("/")
   
   @rx.var(cache=False)
-  def current_user_orders(self) -> List[OrderRepr]:
-    filtered: List[OrderRepr] = []
+  def current_user_orders(self) -> List[Order]:
+    filtered: List[Order] = []
     for order in self.orders:
       if order.user_nick_name == self.current_user.nick_name:
-        filtered.append(OrderRepr.from_order(order))
+        filtered.append(order)
     return filtered
 
   @rx.var(cache=False)
@@ -185,29 +185,30 @@ class State(rx.State):
     return result
 
   @rx.var(cache=False)
-  def breakfast_signups(self) -> List[List[str]]:
+  def breakfast_signups(self) -> List[Order]:
     signups = []
     for order in self.orders:
       if order.item == "Breakfast sign-up" and \
-        order.time.date() == datetime.today().date():
-        signups.append([
-          order.time.strftime("%H:%M:%S"),
-          order.receiver,
-          order.diet,
-          order.allergies
-        ])
+        datetime.fromisoformat(order.time).date() == datetime.today().date():
+        signups.append(order)
     return signups
   
   @rx.var(cache=False)
-  def dinner_signups(self) -> List[List[str]]:
-    signups = []
+  def dinner_signups(self) -> List[Order]:
+    signups: List[Order] = []
     for order in self.orders:
       if order.item == "Dinner sign-up" and \
-        order.time.date() == datetime.today().date():
-        signups.append([order.receiver, order.diet, order.allergies, "no"])
+        datetime.fromisoformat(order.time).date() == datetime.today().date():
+        signups.append(order)
     for user in self.users:
       if user.volunteer:
-        signups.append([user.full_name, user.diet, user.allergies, "yes"])
+        signups.append(Order(order_id="",
+          user_nick_name=user.nick_name, time="",
+          item="Dinner sign-up (volunteer)",
+          quantity=1.0, price=0.0, total=0.0,
+          receiver=user.full_name, diet=user.diet,
+          allergies=user.allergies, served="", tax_category=""
+				))
     return signups
   
   @rx.var(cache=False)
@@ -218,7 +219,7 @@ class State(rx.State):
   def dinner_count_vegan(self) -> int:
     count = 0
     for order in self.dinner_signups:
-      if order[1] == "Vegan":
+      if order.diet == "Vegan":
         count += 1
     return count
   
@@ -226,7 +227,7 @@ class State(rx.State):
   def dinner_count_vegetarian(self) -> int:
     count = 0
     for order in self.dinner_signups:
-      if order[1] == "Vegetarian":
+      if order.diet == "Vegetarian":
         count += 1
     return count
   
@@ -234,17 +235,9 @@ class State(rx.State):
   def dinner_count_meat(self) -> int:
     count = 0
     for order in self.dinner_signups:
-      if order[1] == "Meat":
+      if order.diet == "Meat":
         count += 1
     return count
-  
-  # @rx.var(cache=False)
-  # def get_user_orders(self) -> List[float]:
-  #   user_orders = []
-  #   for order in self.orders:
-  #     if order.user_nick_name == State.current_user.nick_name:
-  #       user_orders.append(order.total)
-  #   return user_orders
   
   @rx.var(cache=False)
   def get_user_debt(self) -> float:

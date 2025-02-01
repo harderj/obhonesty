@@ -6,7 +6,7 @@ import reflex as rx
 from obhonesty.aux import two_decimal_points
 from obhonesty.constants import breakfast_items, tax_categories
 from obhonesty.item import Item
-from obhonesty.order import OrderRepr
+from obhonesty.order import Order
 from obhonesty.state import State
 from obhonesty.user import User
 
@@ -259,13 +259,13 @@ def breakfast_signup_page() -> rx.Component:
 
 
 def user_info_page() -> rx.Component:
-  def show_row(order: OrderRepr):
+  def show_row(order: Order):
     return rx.table.row(
       rx.table.cell(order.time),
       rx.table.cell(order.item),
       rx.table.cell(f"{order.quantity}"),
-      rx.table.cell(f"{order.price:.2f}€"),
-      rx.table.cell(f"{order.total:.2f}€")
+      rx.table.cell(f"{order.price}€"),
+      rx.table.cell(f"{order.total}€")
     )
   
   return rx.container(rx.center(rx.vstack(
@@ -317,6 +317,13 @@ def admin_tax() -> rx.Component:
   )))
 
 def admin_dinner() -> rx.Component:
+  def show_signup(signup: Order):
+    return rx.table.row( 
+      rx.table.cell(signup.receiver),
+      rx.table.cell(signup.diet),
+      rx.table.cell(signup.allergies)
+    )
+
   return rx.container(rx.center(
     rx.vstack(
       rx.heading("Dinner"),
@@ -325,17 +332,51 @@ def admin_dinner() -> rx.Component:
       rx.text(f"Vegan: {State.dinner_count_vegan}"),
       rx.text(f"Vegatarian: {State.dinner_count_vegetarian}"),
       rx.text(f"Meat: {State.dinner_count_meat}"),
-      rx.data_table(data=State.dinner_signups, columns=["Name", "Diet", "Allergies", "Volunteer"])
+      rx.table.root(
+        rx.table.header(
+          rx.table.row(
+            rx.table.column_header_cell("Name"),
+            rx.table.column_header_cell("Diet"),
+            rx.table.column_header_cell("Allergies")
+          )
+        ),
+        rx.table.body(
+          rx.foreach(State.dinner_signups, show_signup)
+        ),
+        variant="surface",
+        size="3"
+      )
     )
   ))
 
 def admin_breakfast() -> rx.Component:
+  def show_signup(signup: Order):
+    return rx.table.row( 
+      rx.table.cell(signup.time),
+      rx.table.cell(signup.receiver),
+      rx.table.cell(signup.diet),
+      rx.table.cell(signup.allergies)
+    )
+
   return rx.container(rx.center(
     rx.vstack(
       rx.heading("Breakfast"),
       rx.button("Go back", on_click=rx.redirect("/admin")),
-      # rx.text(f"Total eating breakfast: {len(signups)}"),
-      rx.data_table(data=State.breakfast_signups, columns=["Time", "Name", "Diet", "Allergies"])   
+      rx.table.root(
+        rx.table.header(
+          rx.table.row(
+            rx.table.column_header_cell("Time"),
+            rx.table.column_header_cell("Name"),
+            rx.table.column_header_cell("Diet"),
+            rx.table.column_header_cell("Allergies")
+          )
+        ),
+        rx.table.body(
+          rx.foreach(State.breakfast_signups, show_signup)
+        ),
+        variant="surface",
+        size="3"
+      )
     )
   ))
 
