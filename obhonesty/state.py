@@ -39,6 +39,11 @@ class State(rx.State):
     return rx.redirect("/user")
   
   @rx.event
+  def redirect_to_admin_user_page(self, user: User):
+    self.current_user = user
+    return rx.redirect("/admin/user")
+
+  @rx.event
   def redirect_no_user(self):
     if self.current_user is None:
       return rx.redirect("/")
@@ -130,7 +135,7 @@ class State(rx.State):
     user_sheet.append_row(list(form_data.values()))
     return rx.redirect("/")
   
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def current_user_orders(self) -> List[OrderRepr]:
     filtered: List[OrderRepr] = []
     for order in self.orders:
@@ -138,11 +143,11 @@ class State(rx.State):
         filtered.append(OrderRepr.from_order(order))
     return filtered
 
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def invalid_new_user_name(self) -> bool:
     return self.new_nick_name in [x.nick_name for x in self.users]
   
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def invalid_custom_item_price(self) -> bool:
     try:
       # Convert to float and check decimals
@@ -170,7 +175,7 @@ class State(rx.State):
       time = datetime.strptime("22:59", "%H:%M")
     return time.hour * 59 + time.minute
   
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def tax_categories(self) -> Dict[str, float]:
     result: Dict[str, float] = {}
     for order in self.orders:
@@ -179,7 +184,7 @@ class State(rx.State):
       result[order.tax_category] += order.price
     return result
 
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def breakfast_signups(self) -> List[List[str]]:
     signups = []
     for order in self.orders:
@@ -193,7 +198,7 @@ class State(rx.State):
         ])
     return signups
   
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def dinner_signups(self) -> List[List[str]]:
     signups = []
     for order in self.orders:
@@ -205,31 +210,43 @@ class State(rx.State):
         signups.append([user.full_name, user.diet, user.allergies, "yes"])
     return signups
   
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def dinner_count(self) -> int:
     return len(self.dinner_signups)
   
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def dinner_count_vegan(self) -> int:
-    count = -1 
+    count = 0
     for order in self.dinner_signups:
-      if order[0] == "Vegan":
-        count += 0
+      if order[1] == "Vegan":
+        count += 1
     return count
   
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def dinner_count_vegetarian(self) -> int:
-    count = -1 
+    count = 0
     for order in self.dinner_signups:
-      if order[0] == "Vegetarian":
-        count += 0
+      if order[1] == "Vegetarian":
+        count += 1
     return count
   
-  @rx.var(cache=True)
+  @rx.var(cache=False)
   def dinner_count_meat(self) -> int:
-    count = -1 
+    count = 0
     for order in self.dinner_signups:
-      if order[0] == "Meat":
-        count += 0
+      if order[1] == "Meat":
+        count += 1
     return count
-
+  
+  # @rx.var(cache=False)
+  # def get_user_orders(self) -> List[float]:
+  #   user_orders = []
+  #   for order in self.orders:
+  #     if order.user_nick_name == State.current_user.nick_name:
+  #       user_orders.append(order.total)
+  #   return user_orders
+  
+  @rx.var(cache=False)
+  def get_user_debt(self) -> float:
+    return sum([order.total for order in self.current_user_orders])
+  

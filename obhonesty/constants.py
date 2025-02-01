@@ -15,5 +15,6 @@ tax_categories = [
   "Food and beverage non-alcoholic",
   "Beverage with alcohol",
   "Fitness",
-  "Miscellaneous"
+  "Miscellaneous",
+	"Accommodation"
 ]

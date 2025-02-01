@@ -53,7 +53,7 @@ def user_page() -> rx.Component:
                   placeholder="Quantity",
                   name="quantity",
                   default_value='1.0',
-                  # type="number"
+                  type="number"
                 )
               ),
               rx.flex(
@@ -129,51 +129,6 @@ def custom_item_page() -> rx.Component:
     ),
     rx.button("Cancel", on_click=rx.redirect("/user"))
   )))
-
-
-def admin() -> rx.Component:
-  return rx.container(rx.center(
-    rx.vstack(
-      rx.heading(f"Admin"),
-      rx.button("Dinner", on_click=rx.redirect("/admin/dinner")),
-      rx.button("Breakfast", on_click=rx.redirect("/admin/breakfast")),
-      rx.button("Tax", on_click=rx.redirect("/admin/tax"))
-    ) 
-  ))
-
-
-def admin_tax() -> rx.Component:
-  return rx.container(rx.center(rx.vstack(
-    rx.heading("Tax categories"),
-    rx.button("Go back", on_click=rx.redirect("/admin")),
-    rx.foreach(
-      State.tax_categories.items(),
-      lambda x: rx.text(f"{x[0]}: {x[1]}")
-    )
-  )))
-
-def admin_dinner() -> rx.Component:
-  return rx.container(rx.center(
-    rx.vstack(
-      rx.heading("Dinner"),
-      rx.button("Go back", on_click=rx.redirect("/admin")),
-      rx.text(f"Total eating dinner: {State.dinner_count}"),
-      rx.text(f"Vegan: {State.dinner_count_vegan}"),
-      rx.text(f"Vegatarian: {State.dinner_count_vegetarian}"),
-      rx.text(f"Meat: {State.dinner_count_meat}"),
-      rx.data_table(data=State.dinner_signups, columns=["Name", "Diet", "Allergies", "Volunteer"])
-    )
-  ))
-
-def admin_breakfast() -> rx.Component:
-  return rx.container(rx.center(
-    rx.vstack(
-      rx.heading("Breakfast"),
-      rx.button("Go back", on_click=rx.redirect("/admin")),
-      # rx.text(f"Total eating breakfast: {len(signups)}"),
-      rx.data_table(data=State.breakfast_signups, columns=["Time", "Name", "Diet", "Allergies"])   
-    )
-  ))
 
 message_name_already_taken: str = "Already taken"
 
@@ -308,7 +263,9 @@ def user_info_page() -> rx.Component:
     return rx.table.row(
       rx.table.cell(order.time),
       rx.table.cell(order.item),
-      rx.table.cell(order.price)
+      rx.table.cell(f"{order.quantity}"),
+      rx.table.cell(f"{order.price:.2f}€"),
+      rx.table.cell(f"{order.total:.2f}€")
     )
   
   return rx.container(rx.center(rx.vstack(
@@ -319,7 +276,9 @@ def user_info_page() -> rx.Component:
         rx.table.row(
           rx.table.column_header_cell("Time"),
           rx.table.column_header_cell("Item"),
-          rx.table.column_header_cell("Price")
+          rx.table.column_header_cell("Quantity"),
+          rx.table.column_header_cell("Unit Price"),
+          rx.table.column_header_cell("Total")
         )
       ),
       rx.table.body(
@@ -328,4 +287,66 @@ def user_info_page() -> rx.Component:
         )
       )
     )
+  )))
+
+def admin() -> rx.Component:
+  def user_button(user: User):
+    return rx.button(
+      f"{user.full_name} ({user.nick_name})",
+      on_click=State.redirect_to_admin_user_page(user)
+    )
+  return rx.container(rx.center(
+    rx.vstack(
+      rx.heading(f"Admin"),
+      rx.button("Dinner", on_click=rx.redirect("/admin/dinner")),
+      rx.button("Breakfast", on_click=rx.redirect("/admin/breakfast")),
+      rx.button("Tax", on_click=rx.redirect("/admin/tax")),
+      rx.text("Users:"),
+      rx.foreach(State.users, user_button)
+    ) 
+  ))
+
+def admin_tax() -> rx.Component:
+  return rx.container(rx.center(rx.vstack(
+    rx.heading("Tax categories"),
+    rx.button("Go back", on_click=rx.redirect("/admin")),
+    rx.foreach(
+      State.tax_categories.items(),
+      lambda x: rx.text(f"{x[0]}: {x[1]}")
+    )
+  )))
+
+def admin_dinner() -> rx.Component:
+  return rx.container(rx.center(
+    rx.vstack(
+      rx.heading("Dinner"),
+      rx.button("Go back", on_click=rx.redirect("/admin")),
+      rx.text(f"Total eating dinner: {State.dinner_count}"),
+      rx.text(f"Vegan: {State.dinner_count_vegan}"),
+      rx.text(f"Vegatarian: {State.dinner_count_vegetarian}"),
+      rx.text(f"Meat: {State.dinner_count_meat}"),
+      rx.data_table(data=State.dinner_signups, columns=["Name", "Diet", "Allergies", "Volunteer"])
+    )
+  ))
+
+def admin_breakfast() -> rx.Component:
+  return rx.container(rx.center(
+    rx.vstack(
+      rx.heading("Breakfast"),
+      rx.button("Go back", on_click=rx.redirect("/admin")),
+      # rx.text(f"Total eating breakfast: {len(signups)}"),
+      rx.data_table(data=State.breakfast_signups, columns=["Time", "Name", "Diet", "Allergies"])   
+    )
+  ))
+
+def admin_user_page() -> rx.Component:
+  return rx.container(rx.center(rx.vstack(
+    rx.heading("User information"),
+    rx.button("Go back", on_click=rx.redirect("/admin")),
+    rx.text(f"Full name: {State.current_user.full_name}"),
+    rx.text(f"Nick name: {State.current_user.nick_name}"),
+    rx.text(f"Email: {State.current_user.email}"),
+    rx.text(f"Phone: {State.current_user.phone_number}"),
+    rx.text(f"Address: {State.current_user.address}"),
+    rx.text(f"Owes: {State.get_user_debt}€")
   )))

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict
 import reflex as rx
 
 
@@ -39,12 +39,16 @@ class Order(rx.Base):
 class OrderRepr(rx.Base):
   time: str
   item: str
-  price: str
+  quantity: float
+  price: float
+  total: float
 
   @staticmethod
   def from_order(order: Order):
     return OrderRepr(
       time=order.time.strftime("%Y-%m-%d, %H:%M:%S"),
       item=order.item,
-      price=f"{order.price:.2f}€"
+      quantity=order.quantity,
+      price=order.price,
+      total=order.total
     )
