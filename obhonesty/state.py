@@ -8,7 +8,7 @@ import reflex as rx
 from obhonesty.user import User
 from obhonesty.item import Item
 from obhonesty.order import Order
-from obhonesty.sheet import user_sheet, item_sheet, order_sheet, admin_sheet
+from obhonesty.sheet import user_sheet, item_sheet, order_sheet, admin_sheet, dinner_sheet
 
 class State(rx.State):
   """The app state."""
@@ -91,7 +91,7 @@ class State(rx.State):
   
   @rx.event
   def order_dinner(self, form_data: dict):
-    order_sheet.append_row([
+    row = [
       str(uuid.uuid4()), 
       self.current_user.nick_name,
       str(datetime.now()),
@@ -105,7 +105,16 @@ class State(rx.State):
       "",
       "Food and beverage non-alcoholic",
       ""
-    ])
+    ]
+    order_sheet.append_row(row)
+
+    # Clear dinner sheet if there are still rows from yesterday
+    potential_time_yesterday = dinner_sheet.cell(2, 3).value
+    if potential_time_yesterday != None:
+      if datetime.fromisoformat(potential_time_yesterday).date() != datetime.now().date():
+        dinner_sheet.delete_rows(2, 200)
+    
+    dinner_sheet.append_row(row) 
     return rx.toast.info("Dinner sign-up successful")
 
   @rx.event
@@ -160,20 +169,26 @@ class State(rx.State):
       return True 
   
   @rx.var(cache=False)
-  def dinner_signup_deadline_minutes(self) -> int:
+  def dinner_signup_available(self) -> int:
     try:
-      time = datetime.strptime(self.admin_data['dinner_signup_deadline'], "%H:%M")
+      deadline = datetime.strptime(self.admin_data['dinner_signup_deadline'], "%H:%M")
     except:
-      time = datetime.strptime("22:59", "%H:%M")
-    return time.hour * 59 + time.minute
+      deadline = datetime.strptime("22:59", "%H:%M")
+    now = datetime.now()
+    deadline_minutes = deadline.hour * 60 + deadline.minute
+    now_minutes = now.hour * 60 + now.minute
+    return now_minutes < deadline_minutes
   
   @rx.var(cache=False)
-  def breakfast_signup_deadline_minutes(self) -> int:
+  def breakfast_signup_available(self) -> int:
     try:
-      time = datetime.strptime(self.admin_data['breakfast_signup_deadline'], "%H:%M")
+      deadline = datetime.strptime(self.admin_data['breakfast_signup_deadline'], "%H:%M")
     except:
-      time = datetime.strptime("22:59", "%H:%M")
-    return time.hour * 59 + time.minute
+      deadline = datetime.strptime("22:59", "%H:%M")
+    now = datetime.now()
+    deadline_minutes = deadline.hour * 60 + deadline.minute
+    now_minutes = now.hour * 60 + now.minute
+    return now_minutes < deadline_minutes
   
   @rx.var(cache=False)
   def tax_categories(self) -> Dict[str, float]:
@@ -208,7 +223,7 @@ class State(rx.State):
           quantity=1.0, price=0.0, total=0.0,
           receiver=user.full_name, diet=user.diet,
           allergies=user.allergies, served="", tax_category=""
-				))
+        ))
     return signups
   
   @rx.var(cache=False)

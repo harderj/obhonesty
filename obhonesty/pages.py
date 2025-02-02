@@ -70,20 +70,19 @@ def user_page() -> rx.Component:
           ),
         )
       )
-  now = datetime.now()
   return rx.container(rx.center(rx.vstack(
     rx.heading(f"Hello {State.current_user.nick_name}"),
     rx.button("Log out", on_click=rx.redirect("/")),
     rx.button("View orders", on_click=rx.redirect("/info")),
     rx.cond(
-      State.breakfast_signup_deadline_minutes < now.hour * 60 + now.minute,
-      rx.text(f"Breakfast sign-up closed (last sign-up at {State.admin_data['breakfast_signup_deadline']})"),
-      rx.button("Sign up for breakfast / packed lunch", on_click=rx.redirect("/breakfast"))
+      State.breakfast_signup_available,
+      rx.button("Sign up for breakfast / packed lunch", on_click=rx.redirect("/breakfast")),
+      rx.text(f"Breakfast sign-up closed (last sign-up at {State.admin_data['breakfast_signup_deadline']})")
     ), 
     rx.cond(
-      State.dinner_signup_deadline_minutes < now.hour * 60 + now.minute,
-      rx.text(f"Dinner sign-up closed (last sign-up at {State.admin_data['dinner_signup_deadline']})"),
-      rx.button("Sign up for dinner", on_click=rx.redirect("/dinner"))
+      State.dinner_signup_available,
+      rx.button("Sign up for dinner", on_click=rx.redirect("/dinner")),
+      rx.text(f"Dinner sign-up closed (last sign-up at {State.admin_data['dinner_signup_deadline']})")
     ),
     rx.text("Register an item:"), 
     rx.button("Custom item", on_click=rx.redirect("/custom_item")),
