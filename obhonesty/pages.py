@@ -139,13 +139,15 @@ def user_signup_page() -> rx.Component:
         rx.text("Please fill in your details to get started with self-service"),
         rx.form(
           rx.vstack(
+            rx.text("User name", weight="medium"),
             rx.form.field(
               rx.form.control(
                 rx.input(
-                  placeholder="Nick name (required)",
+                  placeholder="E.g. 'Bob' (required)",
                   on_change=State.set_new_nick_name,
                   name="nick_name",
-                  required=True
+                  required=True,
+                  width="200%"
                 ),
                 as_child=True
               ),
@@ -154,27 +156,29 @@ def user_signup_page() -> rx.Component:
                 match="valueMissing",
                 force_match=State.invalid_new_user_name,
                 color="var(--red-11)"
-              ),
+              )
             ),
+            rx.text("Full name", weight="medium"),
             rx.input(
-              placeholder="Full name (required)",
+              placeholder="E.g. 'Robert Nesta' (required)",
               name="full_name",
               required=True,
+              width="100%"
             ),
+            rx.text("Phone number", weight="medium"),
             rx.input(
-              placeholder="Phone number (required)",
+              placeholder="E.g. '+45 12345666' (required)",
               name="phone_number",
-              required=True
+              required=True,
+              width="100%"
             ),
+            rx.text("Email", weight="medium"),
             rx.input(
-              placeholder="Email (required)",
+              placeholder="E.g. 'olivebranchelchorro@gmail.com' (required)",
               name="email",
               required=True,
-              type="email"
-            ),
-            rx.input(
-              placeholder="Address (optional)",
-              name="address"
+              type="email",
+              width="100%"
             ),
             rx.button("Submit", type="submit")
           ),
