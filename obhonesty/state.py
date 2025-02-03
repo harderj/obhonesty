@@ -212,8 +212,12 @@ class State(rx.State):
   def breakfast_signups(self) -> List[Order]:
     signups = []
     for order in self.orders:
+      try:
+        order_date = datetime.fromisoformat(order.time).date()
+      except:
+        pass
       if order.item == "Breakfast sign-up" and \
-        datetime.fromisoformat(order.time).date() == datetime.today().date():
+          order_date == datetime.today().date():
         signups.append(order)
     return signups
   
@@ -221,8 +225,12 @@ class State(rx.State):
   def dinner_signups(self) -> List[Order]:
     signups: List[Order] = []
     for order in self.orders:
+      try:
+        order_date = datetime.fromisoformat(order.time).date()
+      except:
+        pass
       if order.item == "Dinner sign-up" and \
-        datetime.fromisoformat(order.time).date() == datetime.today().date():
+          order_date == datetime.today().date():
         signups.append(order)
     for user in self.users:
       if user.volunteer:
