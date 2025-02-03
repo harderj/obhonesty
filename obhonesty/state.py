@@ -21,16 +21,13 @@ class State(rx.State):
   orders: List[Order]
 
   @rx.event
-  def reload_user_and_item_data(self):
+  def reload_sheet_data(self):
     user_data = user_sheet.get_all_records() 
     item_data = item_sheet.get_all_records()
+    order_data = order_sheet.get_all_records()
     self.admin_data = admin_sheet.get_all_records()[-1]
     self.users = [User.from_dict(x) for x in user_data]
     self.items = {x['name'] : Item.from_dict(x) for x in item_data}
-  
-  @rx.event
-  def reload_order_data(self):
-    order_data = order_sheet.get_all_records()
     self.orders = [Order.from_dict(x) for x in order_data]
 
   @rx.event
