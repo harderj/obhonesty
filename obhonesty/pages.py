@@ -197,24 +197,27 @@ def dinner_signup_page() -> rx.Component:
         rx.vstack(
           rx.heading("Sign up for dinner"),
           rx.text("Note: you are signing up for todays dinner. Sign up again tomorrow for tomorrows dinner."),
+					rx.text(f"Price per person is {State.admin_data['dinner_price']}€."),
           rx.spacer(),
-          rx.text("Name of dinner guest"),
+          rx.text("Full name of dinner guest", weight="bold"),
+          rx.text("Note: if you are signing up yourself, just write your own full name."),
+          rx.text("You can also signup someone else (write their name) and it will be added to your bill."),
           rx.input(
             placeholder="Name of diner",
-            default_value=State.current_user.full_name,
-            name="diner"
+            name="diner",
+            required=True
           ),
-          rx.text("Dietary preferences"),
+          rx.text("Dietary preferences", weight="bold"),
           rx.select(
             ["Vegan", "Vegetarian", "Meat"],
             default_value="Vegan",
             name="diet"
           ),
-          rx.text("Allergies"),
+          rx.text("Allergies", weight="bold"),
           rx.input(
             name="allergies"
           ),
-          rx.button("Register", type="submit", on_click=rx.redirect("/user"))
+          rx.button("Register", type="submit")
         ),
         on_submit=State.order_dinner
       ),

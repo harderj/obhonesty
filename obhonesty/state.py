@@ -112,7 +112,8 @@ class State(rx.State):
         dinner_sheet.delete_rows(2, 200)
     
     dinner_sheet.append_row(row) 
-    return rx.toast.info("Dinner sign-up successful")
+    rx.toast.info("Dinner sign-up successful")
+    return rx.redirect("/user")
 
   @rx.event
   def order_breakfast(self, form_data: dict):
