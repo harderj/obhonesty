@@ -30,6 +30,8 @@ class State(rx.State):
     self.items = {x['name'] : Item.from_dict(x) for x in item_data}
     self.orders = [Order.from_dict(x) for x in order_data]
 
+    self.users.sort(key=lambda x: x.nick_name)
+
   @rx.event
   def redirect_to_user_page(self, user: User):
     self.current_user = user
