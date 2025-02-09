@@ -8,7 +8,7 @@ import reflex as rx
 from obhonesty.user import User
 from obhonesty.item import Item
 from obhonesty.order import Order
-from obhonesty.sheet import user_sheet, item_sheet, order_sheet, admin_sheet, dinner_sheet, breakfast_sheet
+from obhonesty.sheet import user_sheet, item_sheet, order_sheet, admin_sheet
 
 class State(rx.State):
   """The app state."""
@@ -107,13 +107,6 @@ class State(rx.State):
     ]
     order_sheet.append_row(row)
 
-    # Clear dinner sheet if there are still rows from yesterday
-    potential_time_yesterday = dinner_sheet.cell(2, 3).value
-    if potential_time_yesterday != None:
-      if datetime.fromisoformat(potential_time_yesterday).date() != datetime.now().date():
-        dinner_sheet.delete_rows(2, 200)
-    
-    dinner_sheet.append_row(row) 
     rx.toast.info("Dinner sign-up successful")
     return rx.redirect("/user")
 
@@ -139,13 +132,6 @@ class State(rx.State):
     ]
     order_sheet.append_row(row)
 
-    # Clear breakfast sheet if there are still rows from yesterday
-    potential_time_yesterday = breakfast_sheet.cell(2, 3).value
-    if potential_time_yesterday != None:
-      if datetime.fromisoformat(potential_time_yesterday).date() != datetime.now().date():
-        breakfast_sheet.delete_rows(2, 200)
-
-    breakfast_sheet.append_row(row)
     return rx.toast.info("Breakfast/pack-lunch sign-up successful")
   
   @rx.event
