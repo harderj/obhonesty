@@ -196,15 +196,24 @@ def dinner_signup_page() -> rx.Component:
       rx.form(
         rx.vstack(
           rx.heading("Sign up for dinner"),
-          rx.text("Note: you are signing up for todays dinner. Sign up again tomorrow for tomorrows dinner."),
-					rx.text(f"Price per person is {State.admin_data['dinner_price']}€."),
-          rx.spacer(),
-          rx.text("Full name of dinner guest", weight="bold"),
-          rx.text("Note: if you are signing up yourself, just write your own full name."),
-          rx.text("You can also signup someone else (write their name) and it will be added to your bill."),
+          rx.text(
+            f"Note: you are signing up for todays dinner. "
+            f"Sign up again tomorrow for tomorrows dinner. "
+            f"Price per person is {State.admin_data['dinner_price']}€. "
+            f"If you are signing up yourself, just write your own full name. "
+            f"You can also sign up someone else on your tab, "
+            f"in that case write the full name of the guest you are signing up."
+					),
+          rx.text("First name of dinner guest", weight="bold"),
           rx.input(
-            placeholder="Name of diner",
-            name="diner",
+            placeholder="First name of dinner guest",
+            name="first_name",
+            required=True
+          ),
+          rx.text("Last name of dinner guest", weight="bold"),
+          rx.input(
+            placeholder="Last name of dinner guest",
+            name="last_name",
             required=True
           ),
           rx.text("Dietary preferences", weight="bold"),
@@ -231,13 +240,24 @@ def breakfast_signup_page() -> rx.Component:
       rx.form(
         rx.vstack(
           rx.heading("Sign up for breakfast"),
-          rx.text("Note: you are signing up for todays breakfast. Sign up again tomorrow for tomorrows breakfast."),
+          rx.text(
+            "Note: you are signing up for todays breakfast. "
+            "Sign up again tomorrow for tomorrows breakfast."
+          ),
           rx.spacer(),
-          rx.text("Name of breakfast guest"),
+          rx.text("First name of breakfast guest"),
           rx.input(
-            placeholder="Name",
-            default_value=State.current_user.full_name,
-            name="full_name"
+            placeholder="First name of breakfast guest",
+            #default_value=State.current_user.full_name,
+            name="first_name",
+            required=True
+          ),
+					rx.text("Last name of breakfast guest"),
+          rx.input(
+            placeholder="Last name of breakfast guest",
+            #default_value=State.current_user.full_name,
+            name="last_name",
+            required=True
           ),
           rx.text("Menu"),
           rx.select.root(
@@ -245,7 +265,10 @@ def breakfast_signup_page() -> rx.Component:
             rx.select.content(
               rx.foreach(
                 breakfast_items,
-                lambda item: rx.select.item(f"{item} ({State.admin_data[item + "_price"]}€)", value=item)
+                lambda item: rx.select.item(
+                  f"{item} ({State.admin_data[item + "_price"]}€)",
+                  value=item
+                )
               )
             ),
             default_value=breakfast_items[0],
