@@ -14,17 +14,36 @@ from obhonesty.user import User
 def index() -> rx.Component:
   # Welcome Page (Index)
   user_button: Callable[[User], rx.Component] = lambda user: \
-    rx.button(user.nick_name, on_click=State.redirect_to_user_page(user))
+    rx.button(
+      user.nick_name,
+      on_click=State.redirect_to_user_page(user)
+    )
   return rx.container(
     rx.center(
       rx.vstack(
         rx.heading("Welcome to the Olive Branch honest self-service", size="7"),
         rx.hstack(
           rx.text("New here?", size="5"),
-          rx.button("Sign up for self-service", on_click=rx.redirect("/signup"))
+          rx.button(
+            rx.icon("user-plus"),
+            "Sign up for self-service",
+            color_scheme="green",
+            on_click=rx.redirect("/signup")
+          )
         ),
         rx.text(f"Find yourself and place an order", size="5"),
-        rx.foreach(State.users, user_button),
+        rx.scroll_area(
+          rx.flex(
+            rx.foreach(State.users, user_button),
+            padding="8px",
+            spacing="4",
+            style={"width": "max"},
+            wrap="wrap"
+          ),
+          type="always",
+          scrollbars="vertical",
+          style={"height": "50vh"}
+        )
       )
     )
   )
@@ -72,21 +91,55 @@ def user_page() -> rx.Component:
       )
   return rx.container(rx.center(rx.vstack(
     rx.heading(f"Hello {State.current_user.nick_name}"),
-    rx.button("Log out", on_click=rx.redirect("/")),
-    rx.button("View orders", on_click=rx.redirect("/info")),
+    rx.button(
+      rx.icon("list"),
+      "View orders",
+      on_click=rx.redirect("/info")
+    ),
     rx.cond(
       State.breakfast_signup_available,
-      rx.button("Sign up for breakfast / packed lunch", on_click=rx.redirect("/breakfast")),
+      rx.button(
+        rx.icon("egg-fried"),
+        "Sign up for breakfast / packed lunch",
+        on_click=rx.redirect("/breakfast")
+      ),
       rx.text(f"Breakfast sign-up closed (last sign-up at {State.admin_data['breakfast_signup_deadline']})")
     ), 
     rx.cond(
       State.dinner_signup_available,
-      rx.button("Sign up for dinner", on_click=rx.redirect("/dinner")),
+      rx.button(
+        rx.icon("utensils"),
+        "Sign up for dinner",
+        on_click=rx.redirect("/dinner")
+      ),
       rx.text(f"Dinner sign-up closed (last sign-up at {State.admin_data['dinner_signup_deadline']})")
     ),
     rx.text("Register an item:"), 
-    rx.button("Custom item", on_click=rx.redirect("/custom_item")),
-    rx.foreach(State.items.values(), item_button)
+    rx.button(
+      rx.icon("circle-plus"),
+      "Custom item",
+      on_click=rx.redirect("/custom_item")
+    ),
+    rx.scroll_area(
+      rx.flex(
+        rx.foreach(State.items.values(), item_button),
+        padding="8px",
+        spacing="4",
+        style={"width": "max"},
+        wrap="wrap"
+      ),
+      type="always",
+      scrollbars="vertical",
+      style={"height": "40vh"}
+    ),
+    rx.text("Remember when you are done to"),
+    rx.button(
+      rx.icon("door-open"),
+      "Log out",
+      color_scheme="red",
+      on_click=rx.redirect("/")
+    ),
+    rx.text("please :)")
   )))
 
 
@@ -203,7 +256,7 @@ def dinner_signup_page() -> rx.Component:
             f"If you are signing up yourself, just write your own full name. "
             f"You can also sign up someone else on your tab, "
             f"in that case write the full name of the guest you are signing up."
-					),
+          ),
           rx.text("First name of dinner guest", weight="bold"),
           rx.input(
             placeholder="First name of dinner guest",
@@ -252,7 +305,7 @@ def breakfast_signup_page() -> rx.Component:
             name="first_name",
             required=True
           ),
-					rx.text("Last name of breakfast guest"),
+          rx.text("Last name of breakfast guest"),
           rx.input(
             placeholder="Last name of breakfast guest",
             #default_value=State.current_user.full_name,
@@ -351,7 +404,7 @@ def admin_dinner() -> rx.Component:
       rx.table.cell(signup.receiver),
       rx.table.cell(signup.diet),
       rx.table.cell(signup.allergies),
-			rx.table.cell(signup.comment)
+      rx.table.cell(signup.comment)
     )
 
   return rx.container(rx.center(
