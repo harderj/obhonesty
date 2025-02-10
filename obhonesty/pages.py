@@ -350,7 +350,8 @@ def admin_dinner() -> rx.Component:
     return rx.table.row( 
       rx.table.cell(signup.receiver),
       rx.table.cell(signup.diet),
-      rx.table.cell(signup.allergies)
+      rx.table.cell(signup.allergies),
+			rx.table.cell(signup.comment)
     )
 
   return rx.container(rx.center(
@@ -366,7 +367,8 @@ def admin_dinner() -> rx.Component:
           rx.table.row(
             rx.table.column_header_cell("Name"),
             rx.table.column_header_cell("Diet"),
-            rx.table.column_header_cell("Allergies")
+            rx.table.column_header_cell("Allergies"),
+            rx.table.column_header_cell("Volunteer"),
           )
         ),
         rx.table.body(

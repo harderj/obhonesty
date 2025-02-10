@@ -17,6 +17,7 @@ class Order(rx.Base):
   allergies: str
   served: str
   tax_category: str
+  comment: str
 
   @staticmethod
   def from_dict(x: Dict[str, str]):
@@ -33,6 +34,6 @@ class Order(rx.Base):
       allergies=x['allergies'],
       served=x['served'],
       tax_category=x['tax_category'],
-      description=x['comment']
+      comment=x['comment']
     )
   

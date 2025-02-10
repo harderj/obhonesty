@@ -233,8 +233,12 @@ class State(rx.State):
           item="Dinner sign-up (volunteer)",
           quantity=1.0, price=0.0, total=0.0,
           receiver=user.full_name, diet=user.diet,
-          allergies=user.allergies, served="", tax_category=""
+          allergies=user.allergies, served="", tax_category="",
+          comment="yes"
         ))
+    signups.sort(key=lambda x: x.receiver)    
+    signups.sort(key=lambda x: x.diet)    
+    signups.sort(key=lambda x: x.comment)    
     return signups
   
   @rx.var(cache=False)
