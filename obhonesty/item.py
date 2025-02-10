@@ -1,6 +1,7 @@
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
+from typing import Dict
 import reflex as rx
+
+from obhonesty.aux import value_or, safe_float_convert
 
 class Item(rx.Base):
   name: str
@@ -12,7 +13,7 @@ class Item(rx.Base):
   def from_dict(x: Dict[str, str]):
     return Item(
       name=x['name'],
-      price=x['price'],
+      price=value_or(safe_float_convert(x['price']), 0.0),
       description=x['description'],
       tax_category=x['tax_category']
     )

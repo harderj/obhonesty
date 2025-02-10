@@ -22,10 +22,18 @@ class State(rx.State):
 
   @rx.event
   def reload_sheet_data(self):
-    user_data = user_sheet.get_all_records() 
-    item_data = item_sheet.get_all_records()
-    order_data = order_sheet.get_all_records()
-    self.admin_data = admin_sheet.get_all_records()[-1]
+    user_data = user_sheet.get_all_records(expected_headers=[
+      'nick_name', 'full_name', 'phone_number', 'email', 'address',
+      'volunteer', 'away', 'diet', 'allergies', 'owes'
+    ]) 
+    item_data = item_sheet.get_all_records(expected_headers=[
+      'name', 'price', 'description', 'tax_category'
+    ])
+    order_data = order_sheet.get_all_records(expected_headers=[
+      'order_id', 'user', 'time', 'item', 'quantity', 'price', 'total',
+      'diet', 'allergies', 'served', 'tax_category', 'comment'
+    ])
+    self.admin_data = admin_sheet.get_all_records()[0]
     self.users = [User.from_dict(x) for x in user_data]
     self.items = {x['name'] : Item.from_dict(x) for x in item_data}
     self.orders = [Order.from_dict(x) for x in order_data]
@@ -65,7 +73,7 @@ class State(rx.State):
       "", "", "", "",
       item.tax_category,
       ""
-    ])
+    ], table_range="A1")
     return rx.toast.info(
       f"'{item.name}' registered succesfully. Thank you!",
       position="bottom-center"
@@ -85,7 +93,7 @@ class State(rx.State):
       "", "", "", "",
       form_data['tax_category'],
       form_data['custom_item_description']
-    ])
+    ], table_range="A1")
     return rx.redirect("/user")
   
   @rx.event
@@ -105,7 +113,7 @@ class State(rx.State):
       "Food and beverage non-alcoholic",
       ""
     ]
-    order_sheet.append_row(row)
+    order_sheet.append_row(row, table_range="A1")
 
     rx.toast.info("Dinner sign-up successful")
     return rx.redirect("/user")
@@ -130,13 +138,13 @@ class State(rx.State):
       "Food and beverage non-alcoholic",
       ""
     ]
-    order_sheet.append_row(row)
+    order_sheet.append_row(row, table_range="A1")
 
     return rx.toast.info("Breakfast/pack-lunch sign-up successful")
   
   @rx.event
   def submit_signup(self, form_data: dict):
-    user_sheet.append_row(list(form_data.values()))
+    user_sheet.append_row(list(form_data.values()), table_range="A1")
     return rx.redirect("/")
   
   @rx.var(cache=False)

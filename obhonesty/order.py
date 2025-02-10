@@ -1,6 +1,8 @@
 from typing import Dict
 import reflex as rx
 
+from typing import Optional
+from obhonesty.aux import safe_float_convert, value_or
 
 class Order(rx.Base):
   order_id: str
@@ -23,9 +25,9 @@ class Order(rx.Base):
       user_nick_name=x['user'],
       time=x['time'],
       item=x['item'],
-      quantity=float(x['quantity']),
-      price=float(x['price']),
-      total=float(x['total']),
+      quantity=value_or(safe_float_convert(x['quantity']), 1.0),
+      price=value_or(safe_float_convert(x['price']), 0.0),
+      total=value_or(safe_float_convert(x['total']), 0.0),
       receiver=x['receiver'],
       diet=x['diet'],
       allergies=x['allergies'],
