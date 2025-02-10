@@ -34,10 +34,15 @@ class State(rx.State):
       'diet', 'allergies', 'served', 'tax_category', 'comment'
     ])
     self.admin_data = admin_sheet.get_all_records()[0]
-    self.users = [User.from_dict(x) for x in user_data]
-    self.items = {x['name'] : Item.from_dict(x) for x in item_data}
-    self.orders = [Order.from_dict(x) for x in order_data]
-
+    self.users = [
+      User.from_dict(x) for x in user_data if x['nick_name'] != ''
+    ]
+    self.items = {
+      x['name'] : Item.from_dict(x) for x in item_data if x['name'] != ''
+    }
+    self.orders = [
+      Order.from_dict(x) for x in order_data
+    ]
     self.users.sort(key=lambda x: x.nick_name)
 
   @rx.event
@@ -153,6 +158,7 @@ class State(rx.State):
     for order in self.orders:
       if order.user_nick_name == self.current_user.nick_name:
         filtered.append(order)
+    filtered.sort(key=lambda x: x.time)
     return filtered
 
   @rx.var(cache=False)
