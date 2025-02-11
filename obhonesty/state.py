@@ -22,6 +22,7 @@ class State(rx.State):
 
   @rx.event
   def reload_sheet_data(self):
+    print("on reload sheet data")
     user_data = user_sheet.get_all_records(expected_headers=[
       'nick_name', 'full_name', 'phone_number', 'email', 'address',
       'volunteer', 'away', 'diet', 'allergies', 'owes'
@@ -218,7 +219,9 @@ class State(rx.State):
         pass
       if order.item == "Breakfast sign-up" and \
           order_date == datetime.today().date():
-        signups.append(order)
+        order_alt = order.copy()
+        order_alt.time = datetime.fromisoformat(order.time).strftime("%H:%M:%S")
+        signups.append(order_alt)
     return signups
   
   @rx.var(cache=False)

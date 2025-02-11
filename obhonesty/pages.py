@@ -398,6 +398,19 @@ def admin_tax() -> rx.Component:
     )
   )))
 
+def admin_refresh_top_bar() -> rx.Component:
+  return rx.flex(
+    rx.button(
+      rx.icon("door-open"), rx.text("Go back"),
+      on_click=rx.redirect("/admin"), color_scheme="red"
+    ),
+    rx.button(
+      rx.icon("refresh-cw"), "Reload",
+      on_click=State.reload_sheet_data
+    ),
+    spacing="2"
+  )
+
 def admin_dinner() -> rx.Component:
   def show_signup(signup: Order):
     return rx.table.row( 
@@ -409,8 +422,8 @@ def admin_dinner() -> rx.Component:
 
   return rx.container(rx.center(
     rx.vstack(
-      rx.heading("Dinner"),
-      rx.button("Go back", on_click=rx.redirect("/admin")),
+      rx.heading("Dinner"), 
+      admin_refresh_top_bar(),
       rx.text(f"Total eating dinner: {State.dinner_count}"),
       rx.text(f"Vegan: {State.dinner_count_vegan}"),
       rx.text(f"Vegatarian: {State.dinner_count_vegetarian}"),
@@ -445,22 +458,27 @@ def admin_breakfast() -> rx.Component:
   return rx.container(rx.center(
     rx.vstack(
       rx.heading("Breakfast"),
-      rx.button("Go back", on_click=rx.redirect("/admin")),
-      rx.table.root(
-        rx.table.header(
-          rx.table.row(
-            rx.table.column_header_cell("Time"),
-            rx.table.column_header_cell("Name"),
-            rx.table.column_header_cell("Diet"),
-            rx.table.column_header_cell("Allergies")
-          )
+      admin_refresh_top_bar(), 
+      rx.scroll_area(
+        rx.table.root(
+          rx.table.header(
+            rx.table.row(
+              rx.table.column_header_cell("Time"),
+              rx.table.column_header_cell("Name"),
+              rx.table.column_header_cell("Diet"),
+              rx.table.column_header_cell("Allergies")
+            )
+          ),
+          rx.table.body(
+            rx.foreach(State.breakfast_signups, show_signup)
+          ),
+          variant="surface",
+          size="3"
         ),
-        rx.table.body(
-          rx.foreach(State.breakfast_signups, show_signup)
-        ),
-        variant="surface",
-        size="3"
-      )
+        type="always",
+        scrollbars="vertical",
+        style={"height": "80vh"}
+      ),
     )
   ))
 
