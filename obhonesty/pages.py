@@ -380,6 +380,10 @@ def admin() -> rx.Component:
   return rx.container(rx.center(
     rx.vstack(
       rx.heading(f"Admin"),
+      rx.button(
+        rx.icon("refresh-cw"), "Reload", on_click=State.reload_sheet_data,
+        color_scheme="green"
+      ),
       rx.button("Dinner", on_click=rx.redirect("/admin/dinner")),
       rx.button("Breakfast", on_click=rx.redirect("/admin/breakfast")),
       rx.button("Tax", on_click=rx.redirect("/admin/tax")),
@@ -405,8 +409,8 @@ def admin_refresh_top_bar() -> rx.Component:
       on_click=rx.redirect("/admin"), color_scheme="red"
     ),
     rx.button(
-      rx.icon("refresh-cw"), "Reload",
-      on_click=State.reload_sheet_data
+      rx.icon("refresh-cw"), "Reload", on_click=State.reload_sheet_data,
+      color_scheme="green"
     ),
     spacing="2"
   )
