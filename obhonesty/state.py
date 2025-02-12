@@ -103,7 +103,7 @@ class State(rx.State):
     return rx.redirect("/user")
   
   @rx.event
-  def order_dinner(self, form_data: dict):
+  def order_dinner_late(self, form_data: dict):
     row = [
       str(uuid.uuid4()), 
       self.current_user.nick_name,
@@ -123,6 +123,26 @@ class State(rx.State):
 
     rx.toast.info("Dinner sign-up successful")
     return rx.redirect("/user")
+  
+  @rx.event
+  def order_dinner_late(self, form_data: dict):
+    row = [
+      str(uuid.uuid4()), 
+      form_data['nick_name'],
+      str(datetime.now()),
+      "Dinner sign-up",
+      1.0,
+      self.admin_data['dinner_price'],
+      self.admin_data['dinner_price'],
+      form_data['full_name'],
+      form_data['diet'],
+      form_data['allergies'],
+      "",
+      "Food and beverage non-alcoholic",
+      ""
+    ]
+    order_sheet.append_row(row, table_range="A1")
+    return rx.redirect("/admin/late")
 
   @rx.event
   def order_breakfast(self, form_data: dict):
@@ -282,3 +302,6 @@ class State(rx.State):
   def get_user_debt(self) -> float:
     return sum([order.total for order in self.current_user_orders])
   
+  @rx.var(cache=False)
+  def get_all_nick_names(self) -> List[str]:
+    return [user.nick_name for user in self.users]

@@ -281,9 +281,37 @@ def dinner_signup_page() -> rx.Component:
           ),
           rx.button("Register", type="submit")
         ),
-        on_submit=State.order_dinner
+        on_submit=State.order_dinner_late
       ),
       rx.button("Cancel", on_click=rx.redirect("/user"))
+    )
+  ))
+
+def late_dinner_signup_page() -> rx.Component:
+  return rx.container(rx.center(
+    rx.vstack(
+      rx.form(
+        rx.vstack(
+          rx.heading("Late dinner signup"),
+          rx.text("Full name of dinner guest", weight="bold"),
+          rx.input(placeholder="Full name", name="full_name", required=True),
+          rx.text("User paying for this dinner sign-up", weight="bold"),
+          rx.select(State.get_all_nick_names, required=True, name="nick_name"),
+          rx.text("Dietary preferences", weight="bold"),
+          rx.select(
+            ["Vegan", "Vegetarian", "Meat"],
+            default_value="Vegan",
+            name="diet"
+          ),
+          rx.text("Allergies", weight="bold"),
+          rx.input(
+            name="allergies"
+          ),
+          rx.button("Register", type="submit")
+        ),
+        on_submit=State.order_dinner_late
+      ),
+      rx.button("Cancel", on_click=rx.redirect("/admin/dinner"))
     )
   ))
 
@@ -428,6 +456,7 @@ def admin_dinner() -> rx.Component:
     rx.vstack(
       rx.heading("Dinner"), 
       admin_refresh_top_bar(),
+      rx.button("Late sign-up", on_click=rx.redirect("/admin/late")),
       rx.text(f"Total eating dinner: {State.dinner_count}"),
       rx.text(f"Vegan: {State.dinner_count_vegan}"),
       rx.text(f"Vegatarian: {State.dinner_count_vegetarian}"),
