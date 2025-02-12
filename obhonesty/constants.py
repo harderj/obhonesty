@@ -1,4 +1,7 @@
 
+default_button_text_size = "4"
+default_heading_size = "8"
+default_text_size = "4"
 
 breakfast_items = [
   "Vegan",
