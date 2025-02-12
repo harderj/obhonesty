@@ -179,7 +179,7 @@ class State(rx.State):
     for order in self.orders:
       if order.user_nick_name == self.current_user.nick_name:
         filtered.append(order)
-    filtered.sort(key=lambda x: x.time)
+    filtered.sort(key=lambda x: x.time, reverse=True)
     return filtered
 
   @rx.var(cache=False)
