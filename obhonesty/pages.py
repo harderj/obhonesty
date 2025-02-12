@@ -308,7 +308,7 @@ def dinner_signup_page() -> rx.Component:
             rx.text("Register", size=default_button_text_size), type="submit"
           )
         ),
-        on_submit=State.order_dinner_late
+        on_submit=State.order_dinner
       ),
       rx.button(
         rx.text("Cancel", size=default_button_text_size),

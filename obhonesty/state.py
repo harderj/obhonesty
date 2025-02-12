@@ -103,7 +103,7 @@ class State(rx.State):
     return rx.redirect("/user")
   
   @rx.event
-  def order_dinner_late(self, form_data: dict):
+  def order_dinner(self, form_data: dict):
     row = [
       str(uuid.uuid4()), 
       self.current_user.nick_name,
