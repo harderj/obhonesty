@@ -125,7 +125,8 @@ def user_page() -> rx.Component:
       ),
       rx.text(
         f"Dinner sign-up closed "
-        f"(last sign-up at {State.admin_data['dinner_signup_deadline']})",
+        f"(last sign-up at {State.admin_data['dinner_signup_deadline']}, "
+        f"for late sign-ups, please ask the kitchen staff)",
         size=default_text_size
       )
     ),
