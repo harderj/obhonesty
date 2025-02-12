@@ -430,22 +430,33 @@ def user_info_page() -> rx.Component:
       rx.text(f"Back to orders and items", size=default_button_text_size),
       on_click=rx.redirect("/user")
     ),
-    rx.table.root(
-      rx.table.header(
-        rx.table.row(
-          rx.table.column_header_cell("Time"),
-          rx.table.column_header_cell("Item"),
-          rx.table.column_header_cell("Quantity"),
-          rx.table.column_header_cell("Unit Price"),
-          rx.table.column_header_cell("Total")
-        )
-      ),
-      rx.table.body(
-        rx.foreach(
-          State.current_user_orders, show_row
-        )
-      )
-    )
+		rx.text(
+      "Note: new registrations may take a moment to show. "
+      "If you made a registration by mistake, please talk to the reception "
+      "and they will help correcting it.",
+      size=default_text_size
+		),
+		rx.text("Your registrations:", size=default_text_size, weight="bold"),
+		rx.scroll_area(
+    	rx.table.root(
+    	  rx.table.header(
+    	    rx.table.row(
+    	      rx.table.column_header_cell("Time"),
+    	      rx.table.column_header_cell("Item"),
+    	      rx.table.column_header_cell("Quantity"),
+    	      rx.table.column_header_cell("Unit Price"),
+    	      rx.table.column_header_cell("Total")
+    	    )
+    	  ),
+    	  rx.table.body(
+    	    rx.foreach(
+    	      State.current_user_orders, show_row
+    	    )
+    	  )
+    	),
+      scrollbars="vertical",
+      style={"height": "70vh"}
+		)
   )))
 
 def admin() -> rx.Component:
