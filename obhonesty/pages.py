@@ -15,7 +15,8 @@ def index() -> rx.Component:
   user_button: Callable[[User], rx.Component] = lambda user: \
     rx.button(
       rx.text(user.nick_name, size=default_button_text_size),
-      on_click=State.redirect_to_user_page(user)
+      on_click=State.redirect_to_user_page(user),
+      size="4"
     )
   return rx.container(
     rx.center(
@@ -57,7 +58,8 @@ def user_page() -> rx.Component:
     return rx.dialog.root(
         rx.dialog.trigger(rx.button(
           rx.text(title, size=default_button_text_size),
-          color_scheme='gray'
+          color_scheme='gray',
+          size="4"
         )),
         rx.dialog.content(
           rx.dialog.title(title),
@@ -73,7 +75,7 @@ def user_page() -> rx.Component:
                 rx.input(
                   placeholder="Quantity",
                   name="quantity",
-                  default_value='1.0',
+                  default_value='1',
                   type="number"
                 )
               ),

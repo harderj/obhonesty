@@ -142,7 +142,7 @@ class State(rx.State):
       ""
     ]
     order_sheet.append_row(row, table_range="A1")
-    return rx.redirect("/admin/late")
+    return rx.redirect("/admin/dinner")
 
   @rx.event
   def order_breakfast(self, form_data: dict):
