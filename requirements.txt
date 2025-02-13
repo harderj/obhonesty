@@ -1,2 +1,2 @@
-reflex==0.6.7
+reflex==0.7.0
 gspread==6.1.4
