@@ -231,7 +231,7 @@ class State(rx.State):
 
   @rx.var(cache=False)
   def breakfast_signups(self) -> List[Order]:
-    signups = []
+    signups: List[Order] = []
     for order in self.orders:
       try:
         order_date = datetime.fromisoformat(order.time).date()
@@ -242,6 +242,7 @@ class State(rx.State):
         order_alt = order.copy()
         order_alt.time = datetime.fromisoformat(order.time).strftime("%H:%M:%S")
         signups.append(order_alt)
+    signups.sort(key=lambda x: x.time, reverse=True)
     return signups
   
   @rx.var(cache=False)
