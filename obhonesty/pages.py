@@ -400,8 +400,7 @@ def breakfast_signup_page() -> rx.Component:
           ),
           rx.button(
             rx.text("Register", size=default_button_text_size),
-            type="submit",
-            on_click=rx.redirect("/user")
+            type="submit"
           )
         ),
         on_submit=State.order_breakfast

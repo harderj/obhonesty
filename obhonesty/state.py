@@ -165,8 +165,8 @@ class State(rx.State):
       ""
     ]
     order_sheet.append_row(row, table_range="A1")
-
-    return rx.toast.info("Breakfast/pack-lunch sign-up successful")
+    rx.toast.info("Breakfast/pack-lunch sign-up successful")
+    return rx.redirect("/user")
   
   @rx.event
   def submit_signup(self, form_data: dict):
