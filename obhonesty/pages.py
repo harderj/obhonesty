@@ -234,10 +234,17 @@ def user_signup_page() -> rx.Component:
                 color="var(--red-11)"
               )
             ),
-            rx.text("Full name", weight="medium"),
+            rx.text("First name", weight="medium"),
             rx.input(
-              placeholder="E.g. 'Robert Nesta' (required)",
-              name="full_name",
+              placeholder="E.g. 'Robert' (required)",
+              name="first_name",
+              required=True,
+              width="100%"
+            ),
+						rx.text("Last name", weight="medium"),
+            rx.input(
+              placeholder="E.g. 'Robertson' (required)",
+              name="last_name",
               required=True,
               width="100%"
             ),

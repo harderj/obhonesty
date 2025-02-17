@@ -24,8 +24,8 @@ class State(rx.State):
   def reload_sheet_data(self):
     print("Reloading sheet data")
     user_data = user_sheet.get_all_records(expected_headers=[
-      'nick_name', 'full_name', 'phone_number', 'email', 'address',
-      'volunteer', 'away', 'diet', 'allergies', 'owes'
+      'nick_name', 'first_name', 'last_name', 'phone_number', 'email',
+      'address', 'volunteer', 'away', 'diet', 'allergies', 'owes'
     ]) 
     item_data = item_sheet.get_all_records(expected_headers=[
       'name', 'price', 'description', 'tax_category'

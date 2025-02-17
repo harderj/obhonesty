@@ -3,7 +3,8 @@ import reflex as rx
 
 class User(rx.Base):
   nick_name: str
-  full_name: str
+  first_name: str
+  last_name: str
   email: str
   phone_number: str
   address: str
@@ -12,11 +13,16 @@ class User(rx.Base):
   diet: str
   allergies: str
 
+  @property
+  def full_name(self) -> str:
+     return f"{self.first_name} {self.last_name}"
+
   @staticmethod
   def from_dict(x: Dict[str, str]):
     return User(
       nick_name=x['nick_name'],
-      full_name=x['full_name'],
+      first_name=x['first_name'],
+      last_name=x['last_name'],
       email=x['email'],
       phone_number=x['phone_number'],
       address=x['address'],
